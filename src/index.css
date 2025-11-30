@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.chart-explainer {
+  font-size: 11px;
+  color: #525252;
+  margin-bottom: 6px;
+  font-style: italic;
+}
