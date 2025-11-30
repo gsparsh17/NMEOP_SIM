@@ -1,10 +1,3 @@
-export const GOV_COLORS = {
-  amber: "#DA8A00",
-  green: "#2F7F3E",
-  grey: "#64748b",
-  dark: "#1e293b",
-};
-
 // ===============================
 // Static Data for Demo Simulation
 // ===============================
@@ -21,6 +14,49 @@ export const STATES = [
 export const YEARS = ["2010–2015", "2016–2020", "2021–2025", "2026–2030"];
 
 export const SCENARIOS = ["Baseline", "Scenario A", "Scenario B"];
+
+// -------------------------------
+// Live Market + NMEO-OP Snapshot
+// -------------------------------
+export const liveMarket = {
+  oilYear: "Nov 2024 – Oct 2025",
+  globalChangePct: 12, // % change in global CPO vs last month
+  status: "Volatile", // "Normal" | "Volatile" | "Shock"
+  description: "Global CPO prices are ~12% higher than last month.",
+};
+
+export const farmerRisk = {
+  riskLevel: "Amber", // "Green" | "Amber" | "Red"
+  fpBelowVpMonths: 3,
+  comment: "In 3 of the last 12 months, market price (FP) was below Govt-assured VP.",
+};
+
+export const supplyGapSummary = {
+  domesticShare: 44, // % of demand met by domestic oil
+  importShare: 56,
+  note: "India still depends heavily on imports; domestic production not yet sufficient.",
+};
+
+export const nmeoOpProgress = {
+  // Targets are illustrative
+  areaTarget2030: 1.0, // million ha
+  areaCurrent: 0.7,
+  productionTarget2030: 0.60, // million tonnes oil
+  productionCurrent: 0.27,
+  farmerRetentionScore: 0.78, // 0–1, higher is better
+};
+
+export const clusterStatus = {
+  millsNearby: 82, // % of farmers within desired radius of a mill
+  avgDistanceKm: 14,
+  note: "Cluster-based expansion has improved access to mills in most districts.",
+};
+
+export const retailInflationInfo = {
+  status: "Comfortable", // "Comfortable" | "Rising" | "High"
+  latestYoY: 4.2,
+  note: "Edible oil inflation is currently manageable for consumers.",
+};
 
 // -------------------------------
 // Overview Page - Charts
@@ -56,9 +92,9 @@ export const scenarioComparisonRows = [
   },
   {
     metric: "GoI VGP Outlay (₹ crore)",
-    baseline: "₹ 6200 Cr",
-    scenarioA: "₹ 5400 Cr",
-    scenarioB: "₹ 5100 Cr",
+    baseline: "₹ 6,200 Cr",
+    scenarioA: "₹ 5,400 Cr",
+    scenarioB: "₹ 5,100 Cr",
   },
   {
     metric: "Average Landed CPO (₹/kg)",
@@ -121,13 +157,67 @@ export const areaProductionData = [
 // Diagnostics Page - Indicators
 // -------------------------------
 export const diagnosticsDataQuality = [
-  { series: "CPO Prices", completeness: 98, revisions: 3 },
-  { series: "Import Volumes", completeness: 96, revisions: 5 },
-  { series: "Retail Prices", completeness: 89, revisions: 8 },
+  { series: "CPO Prices (Global)", completeness: 98, revisions: 3 },
+  { series: "Import Volumes (DGFT)", completeness: 96, revisions: 5 },
+  { series: "Retail Prices (CPI/WPI)", completeness: 89, revisions: 8 },
 ];
 
 export const diagnosticsModelPerf = [
   { model: "CPO Price Forecast", mape: 6.2, rmse: 12.4 },
   { model: "Import Demand", mape: 8.5, rmse: 0.23 },
   { model: "Retail Pass-through", mape: 7.1, rmse: 1.8 },
+];
+
+// Add this to your existing staticData.js file
+
+export const missionAlignmentData = {
+  areaExpansion: {
+    target2030: 1.0,
+    current: 0.7,
+    status: "on-track",
+    description: "Area expansion progressing well but needs acceleration"
+  },
+  farmerViability: {
+    score: 78,
+    trend: "stable",
+    risk: "medium",
+    description: "Farmer retention probability remains positive"
+  },
+  clusterHealth: {
+    millsUtilization: 65,
+    avgDistance: 14,
+    status: "improving",
+    description: "Cluster development supporting farmer access"
+  }
+};
+
+export const policyActions = [
+  {
+    category: "Farmers",
+    indicator: "FP < VP for 3 months",
+    risk: "⚠️ Amber",
+    action: "Increase duty support",
+    priority: "medium"
+  },
+  {
+    category: "Consumers",
+    indicator: "Retail inflation at 4.2%",
+    risk: "🟢 Safe",
+    action: "Monitor",
+    priority: "low"
+  },
+  {
+    category: "NMEO-OP",
+    indicator: "Area expansion on track",
+    risk: "🟢 Safe",
+    action: "Continue current policy",
+    priority: "low"
+  },
+  {
+    category: "FX Outflow",
+    indicator: "Import cost rising",
+    risk: "⚠️ Amber",
+    action: "Review duty structure",
+    priority: "medium"
+  }
 ];
