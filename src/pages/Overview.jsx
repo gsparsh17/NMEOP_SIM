@@ -247,7 +247,7 @@ export default function Overview() {
             </div>
           </div>
           
-          <div className="ml-auto">
+          <div className="ml-auto ">
             <button 
               onClick={loadLiveData}
               disabled={loading}

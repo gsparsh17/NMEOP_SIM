@@ -15,9 +15,11 @@ import {
 } from "../data/staticData";
 
 export default function ScenarioBuilder() {
+  // --- 1. State Management ---
+  const [activeMode, setActiveMode] = useState("ai"); // "ai" or "manual"
   const [duty, setDuty] = useState(5);
   const [cess, setCess] = useState(7.5);
-  const [fx, setFx] = useState(83.5);
+  const [fx, setFx] = useState(89.97);
   const [globalShock, setGlobalShock] = useState("No Shock");
   const [weatherRisk, setWeatherRisk] = useState("Normal");
   const [clusterStatus, setClusterStatus] = useState("Expanding Well");
@@ -26,10 +28,78 @@ export default function ScenarioBuilder() {
   const [seasonalMonth, setSeasonalMonth] = useState("October");
   const [plantationAge, setPlantationAge] = useState(7);
   const [selectedState, setSelectedState] = useState("Telangana");
+  
+  // Manual Input State
+  const [spotPrice, setSpotPrice] = useState("");
+  const [useCurrentSpot, setUseCurrentSpot] = useState(true);
+  
+  // API Data State
+  const [apiResult, setApiResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Get current state data
   const currentStateData = stateWiseData[selectedState] || stateWiseData["Telangana"];
 
+  // --- 2. API Integration ---
+  const fetchSimulation = async (useManualSpot = false, manualSpotPrice = null) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const requestBody = {
+        month_name: seasonalMonth,
+        year: 2025,
+        bcd: duty,
+        cess: cess
+      };
+      
+      // Add spot_price if in manual mode and provided
+      if (useManualSpot && manualSpotPrice) {
+        requestBody.spot_price = parseFloat(manualSpotPrice);
+      }
+      
+      const response = await fetch("http://localhost:5000/tariff-simulation", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(requestBody),
+        mode: 'cors'
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Request Failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("API Response:", data); // Debug log
+      setApiResult(data);
+      return data;
+    } catch (err) {
+      console.error("Simulation Error:", err);
+      const errorMsg = err.message.includes("Model not loaded") 
+        ? "AI Model not available. Please use Manual Input mode."
+        : "Failed to fetch simulation data. Please check connection.";
+      setError(errorMsg);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Auto-fetch when in AI mode
+  useEffect(() => {
+    if (activeMode === "ai") {
+      const timer = setTimeout(() => {
+        fetchSimulation(false, null);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [duty, cess, seasonalMonth, activeMode]);
+
+  // --- 3. Derived Calculations (Hybrid: API + Local) ---
+  
   // Calculate current yield based on plantation age
   const currentYield = useMemo(() => {
     const ageData = bearingPotential.find(age => age.age === plantationAge);
@@ -96,6 +166,95 @@ export default function ScenarioBuilder() {
     };
   }, [seasonalPattern, currentSeasonalPrice]);
 
+  // Current market spot price (simulated)
+  const currentMarketSpot = useMemo(() => {
+    // Simulate current CPO spot price based on month
+    const basePrice = 90;
+    const monthFactor = {
+      "January": 1.05, "February": 1.03, "March": 1.02,
+      "April": 1.00, "May": 0.98, "June": 0.96,
+      "July": 0.95, "August": 0.97, "September": 1.00,
+      "October": 1.02, "November": 1.04, "December": 1.06
+    };
+    return (basePrice * (monthFactor[seasonalMonth] || 1)).toFixed(2);
+  }, [seasonalMonth]);
+
+  // Update spot price when toggling useCurrentSpot
+  useEffect(() => {
+    if (useCurrentSpot) {
+      setSpotPrice(currentMarketSpot);
+    }
+  }, [useCurrentSpot, currentMarketSpot]);
+
+  // --- 4. Simulation Results Logic (Hybrid: API + Frontend) ---
+  const simulationResults = useMemo(() => {
+    // Default values if API fails
+    let cifPrice = 980; 
+    let landedCost = 1140; 
+    let retailPrice = 1200;
+    let riskFlag = "Normal";
+    let effectiveDuty = duty + cess;
+    let cifSource = "default";
+    let predictedPrice = null;
+    let usedSpotPrice = null;
+
+    // Override with API Data if available
+    if (apiResult && !error) {
+      cifPrice = apiResult.cif_price_used || apiResult.predicted_cif_price || 980;
+      landedCost = apiResult.landed_cost || 1140;
+      retailPrice = apiResult.estimated_retail_price || 1200;
+      riskFlag = apiResult.risk_flag || "Normal";
+      effectiveDuty = apiResult.effective_duty_pct || (duty + cess);
+      cifSource = apiResult.cif_source || "unknown";
+      predictedPrice = apiResult.predicted_cif_price;
+      usedSpotPrice = apiResult.spot_price;
+    }
+
+    // Frontend calculations using API data
+    const domesticProduction = currentYield * (currentStateData.areaCovered / 10000) * 0.22; // FFB to CPO
+    const totalConsumption = 9.5; // National proxy or State Proxy
+    const importVolume = Math.max(0, totalConsumption - domesticProduction); 
+    
+    // Farmer Impact: 
+    // Using simple elasticity: 1% Duty increase ~= 150 Rs/MT FFB increase (Heuristic)
+    const farmerPriceImpact = (duty - 5) * 150; // Base is 5% duty
+    const finalFarmerPrice = Math.round(currentSeasonalPrice + farmerPriceImpact);
+
+    // VGP (Viability Gap Payment) logic
+    // If Market Price (derived from Landed) < Target Price (18000), Govt pays diff
+    const fiscalCost = Math.max(0, (18000 - finalFarmerPrice) * 0.1); 
+
+    // FX Impact
+    const fxOutflow = (importVolume * cifPrice) / 1000; // Billion USD approx logic
+
+    // State-specific self-sufficiency
+    const stateSelfSufficiency = ((domesticProduction / totalConsumption) * 100).toFixed(1);
+    const nationalSelfSufficiency = ((nmeoOpProgress.productionCurrent / 19.3) * 100).toFixed(1); // Based on 2023 consumption
+    
+    return {
+      // API-driven metrics
+      cifPrice: cifPrice.toFixed(1),
+      landedCost: landedCost.toFixed(0),
+      retailPrice: retailPrice.toFixed(0),
+      riskFlag: riskFlag,
+      effectiveDuty: effectiveDuty.toFixed(1),
+      cifSource: cifSource,
+      predictedPrice: predictedPrice,
+      usedSpotPrice: usedSpotPrice,
+      
+      // Frontend-calculated metrics
+      importVolume: importVolume.toFixed(2),
+      farmerPrice: finalFarmerPrice,
+      fiscalCost: fiscalCost.toFixed(0),
+      fxOutflow: fxOutflow.toFixed(2),
+      
+      selfSufficiency: stateSelfSufficiency,
+      nationalSelfSufficiency: nationalSelfSufficiency,
+      stateProduction: domesticProduction.toFixed(2),
+      oer: currentStateData.OER || 16.0
+    };
+  }, [apiResult, duty, cess, currentYield, currentSeasonalPrice, currentStateData, error]);
+
   // State-specific recommendations
   const stateSpecificContext = useMemo(() => {
     const context = {
@@ -126,13 +285,43 @@ export default function ScenarioBuilder() {
     return context;
   }, [selectedState]);
 
+  // --- 5. Recommendation Logic ---
   const recommendation = useMemo(() => {
     let lines = [];
+
+    // Mode and API Status
+    lines.push(`Mode: ${activeMode === "ai" ? "AI-Powered Model" : "Manual Input"}`);
+    
+    if (loading) {
+      lines.push(`${activeMode === "ai" ? "Running AI simulation..." : "Calculating..."}`);
+    } else if (error) {
+      lines.push("⚠️ " + error);
+    } else if (apiResult) {
+      lines.push(`✅ ${activeMode === "ai" ? "AI Simulation Complete" : "Manual Calculation Complete"}: ${seasonalMonth} 2025`);
+    }
+
+    // Price source information
+    if (apiResult?.cif_source) {
+      if (apiResult.cif_source === "user_input_spot_price") {
+        lines.push(`Using manual spot price: ₹${apiResult.spot_price || spotPrice}`);
+      } else {
+        lines.push(`Using AI-predicted CIF price: ₹${apiResult.predicted_cif_price}`);
+      }
+    }
 
     // State-specific context
     lines.push(`Analysis for ${selectedState}:`);
     if (stateSpecificContext.strengths.length > 0) {
       lines.push(`Strengths: ${stateSpecificContext.strengths.join(', ')}`);
+    }
+
+    // API Risk Flag Analysis
+    if (simulationResults.riskFlag) {
+      if (simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")) {
+        lines.push("⚠️ WARNING: Landed cost is low. Farmer viability gap is high. Consider raising duty.");
+      } else if (simulationResults.riskFlag.includes("Safe") || simulationResults.riskFlag.includes("High")) {
+        lines.push("✅ Market Status: Landed cost supports farmer prices naturally.");
+      }
     }
 
     // Global price context
@@ -150,17 +339,6 @@ export default function ScenarioBuilder() {
       );
     }
 
-    // Weather / domestic supply context
-    if (weatherRisk === "Heat Stress" || weatherRisk === "Drought Risk") {
-      lines.push(
-        "Upcoming weather conditions could reduce domestic production. Keeping duty moderate can prevent shortages."
-      );
-    } else {
-      lines.push(
-        "Weather forecast is normal. Duty can be used more aggressively to protect farmer incomes during peak production."
-      );
-    }
-
     // Seasonal considerations
     if (seasonalMonth === seasonAnalysis.peakMonth) {
       lines.push(
@@ -173,17 +351,6 @@ export default function ScenarioBuilder() {
     } else {
       lines.push(
         `Current seasonal index: ${seasonAnalysis.seasonalIndex}% (0% = lean, 100% = peak)`
-      );
-    }
-
-    // Plantation age considerations
-    if (plantationAge <= 5) {
-      lines.push(
-        `Young plantations (${plantationAge} years) have lower yields (${currentYield} MT/ha). Supportive policies needed for farmer viability during establishment phase.`
-      );
-    } else if (plantationAge >= 8) {
-      lines.push(
-        `Mature plantations (${plantationAge} years) at peak yield (${currentYield} MT/ha). Focus on maintaining productivity and quality.`
       );
     }
 
@@ -220,35 +387,29 @@ export default function ScenarioBuilder() {
     });
 
     return lines;
-  }, [duty, globalShock, weatherRisk, fxShock, clusterStatus, seasonalMonth, seasonAnalysis, plantationAge, currentYield, selectedState, stateSpecificContext]);
+  }, [simulationResults, duty, globalShock, weatherRisk, fxShock, clusterStatus, 
+      seasonalMonth, seasonAnalysis, plantationAge, currentYield, selectedState, 
+      stateSpecificContext, loading, error, apiResult, activeMode, spotPrice]);
 
-  // Enhanced simulation results with state-specific data
-  const simulationResults = useMemo(() => {
-    const baseImportCost = 130; // $/ton base CPO price
-    const domesticProduction = currentYield * (currentStateData.areaCovered / 10000) * 0.22; // FFB to CPO conversion
-    const importVolume = 9.5 - domesticProduction; // Million tons
-    
-    // Duty impact calculations
-    const totalTariff = duty + cess;
-    const landedCost = baseImportCost * (1 + totalTariff/100) * fx;
-    const farmerPriceImpact = duty * 150; // ₹ per % duty
-    const fiscalCost = Math.max(0, (18000 - (currentSeasonalPrice + farmerPriceImpact)) * 0.1); // VGP estimate
-    
-    // State-specific self-sufficiency
-    const stateSelfSufficiency = ((domesticProduction / 9.5) * 100).toFixed(1);
-    const nationalSelfSufficiency = ((nmeoOpProgress.productionCurrent / 19.3) * 100).toFixed(1); // Based on 2023 consumption
-    
-    return {
-      importVolume: Math.max(0, importVolume).toFixed(2),
-      landedCost: landedCost.toFixed(0),
-      farmerPrice: Math.round(currentSeasonalPrice + farmerPriceImpact),
-      fiscalCost: fiscalCost.toFixed(0),
-      selfSufficiency: stateSelfSufficiency,
-      nationalSelfSufficiency: nationalSelfSufficiency,
-      stateProduction: domesticProduction.toFixed(2),
-      oer: currentStateData.OER || 16.0
-    };
-  }, [duty, cess, fx, currentYield, currentSeasonalPrice, currentStateData]);
+  // Handle mode change
+  const handleModeChange = (mode) => {
+    setActiveMode(mode);
+    if (mode === "manual") {
+      // Trigger calculation with manual spot price
+      if (spotPrice) {
+        fetchSimulation(true, spotPrice);
+      }
+    }
+  };
+
+  // Handle manual calculate
+  const handleManualCalculate = () => {
+    if (!spotPrice || isNaN(parseFloat(spotPrice))) {
+      setError("Please enter a valid spot price");
+      return;
+    }
+    fetchSimulation(true, spotPrice);
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -259,28 +420,73 @@ export default function ScenarioBuilder() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-2xl font-bold text-[#003366]">Tariff Strategy Builder</h2>
-                <div className="bg-[#003366] text-white px-3 py-1 rounded text-sm font-medium">
-                  <span>OFFICIAL TOOL</span>
+                <div className={`px-3 py-1 rounded text-sm font-medium ${
+                  "bg-blue-600 text-white"
+                }`}>
+                  {activeMode === "ai" ? "AI-POWERED" : "MANUAL INPUT"}
                 </div>
+                {loading && (
+                  <div className="flex items-center gap-2 text-blue-600 text-sm">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    {activeMode === "ai" ? "Running AI Simulation..." : "Calculating..."}
+                  </div>
+                )}
               </div>
               
               <p className="text-gray-700 mt-1 border-l-3 border-[#0072bc] pl-3">
-                Simulate different customs duty scenarios incorporating FFB production seasonality, plantation maturity, and state-specific conditions
+                Simulate different customs duty scenarios with AI predictions or manual price inputs
               </p>
               
-              <div className="mt-3 inline-flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border border-gray-200">
-                <img 
-                  src="/assets/ut.png" 
-                  alt="Ministry Logo" 
-                  className="w-6 h-6"
-                />
-                <span className="text-sm text-gray-700">
-                  <span className="font-semibold">Customs & Tariff Simulation</span>
-                  <span className="text-gray-500 mx-2">|</span>
-                  <span className="text-gray-600">Ministry of Agriculture</span>
-                </span>
+              {/* Mode Toggle */}
+              <div className="mt-3 flex items-center gap-4">
+                <div className="flex bg-gray-200 rounded-lg p-1">
+                  <button
+                    onClick={() => handleModeChange("ai")}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      activeMode === "ai" 
+                        ? "bg-white text-gray-800 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                  >
+                    🤖 AI-Powered Model
+                  </button>
+                  <button
+                    onClick={() => handleModeChange("manual")}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      activeMode === "manual" 
+                        ? "bg-white text-gray-800 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                  >
+                    ✏️ Manual Input
+                  </button>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  {activeMode === "ai" 
+                    ? "Using machine learning to predict CPO prices"
+                    : "Enter current market prices manually"
+                  }
+                </div>
               </div>
+              
+              {error && (
+                <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                  ⚠️ {error}
+                </div>
+              )}
             </div>
+            
+            {/* API Results Display */}
+            {apiResult && !loading && (
+              <div className="text-right hidden md:block">
+                <div className="text-xs text-gray-500 uppercase tracking-wide">Predicted Retail Price</div>
+                <div className="text-3xl font-bold text-[#003366]">₹{simulationResults.retailPrice}</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {simulationResults.cifSource === "user_input_spot_price" ? "Manual Input" : "AI Prediction"}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -302,6 +508,55 @@ export default function ScenarioBuilder() {
               options={Object.keys(stateWiseData).filter(state => state !== "All-India")}
             />
 
+            {/* Mode-specific controls */}
+            {activeMode === "manual" && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="font-semibold text-blue-800 mb-3">Manual Price Input</div>
+                
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-700">Use Current Market Price</span>
+                  <button
+                    onClick={() => setUseCurrentSpot(!useCurrentSpot)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      useCurrentSpot ? "bg-blue-500" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        useCurrentSpot ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CPO Spot Price (₹/MT)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-blue-500"
+                    value={spotPrice}
+                    onChange={(e) => setSpotPrice(e.target.value)}
+                    placeholder="Enter spot price..."
+                    disabled={useCurrentSpot}
+                  />
+                  {useCurrentSpot && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      Using estimated current market price for {seasonalMonth}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-white p-2 rounded border border-gray-200">
+                  <div className="font-medium">Current Market Estimate:</div>
+                  <div className="mt-1">₹{currentMarketSpot} per MT CPO</div>
+                  <div className="text-gray-400">Based on seasonal patterns for {seasonalMonth}</div>
+                </div>
+              </div>
+            )}
+
             <ControlSlider
               label="Basic Customs Duty"
               value={duty}
@@ -318,13 +573,6 @@ export default function ScenarioBuilder() {
               explanation="Sector-specific levies and charges"
             />
 
-            <ControlInput
-              label="Exchange Rate (₹ per USD)"
-              value={fx}
-              setValue={setFx}
-              explanation="Weaker rupee increases import costs"
-            />
-
             <SelectInput
               label="Production Season"
               state={seasonalMonth}
@@ -332,81 +580,117 @@ export default function ScenarioBuilder() {
               options={["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]}
             />
 
-            <SelectInput
-              label="Plantation Age (Years)"
-              state={plantationAge}
-              setState={setPlantationAge}
-              options={[4, 5, 6, 7, 8, 9, 10]}
-            />
-
-            <SelectInput
-              label="Global Market Condition"
-              state={globalShock}
-              setState={setGlobalShock}
-              options={["No Shock", "Mild Increase", "Moderate Increase", "Severe Increase"]}
-            />
-
-            <SelectInput
-              label="Weather / Production Risk"
-              state={weatherRisk}
-              setState={setWeatherRisk}
-              options={["Normal", "Heat Stress", "Drought Risk"]}
-            />
-
-            <SelectInput
-              label="Cluster Expansion Status"
-              state={clusterStatus}
-              setState={setClusterStatus}
-              options={["Expanding Well", "Moderate", "Slowing"]}
-            />
-
-            <ToggleSwitch
-              label="Rupee Depreciation Risk"
-              value={fxShock}
-              setValue={setFxShock}
-            />
-
-            {/* Enhanced Seasonal Information Panel */}
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <h4 className="font-semibold text-amber-800 text-sm mb-2">
-                {selectedState} - Seasonal Context
-              </h4>
-              <div className="text-xs text-amber-700 space-y-1">
-                <div>Current Month: <strong>{seasonalMonth}</strong></div>
-                <div>Expected FFB Price: <strong>₹{currentSeasonalPrice.toLocaleString()}/MT</strong></div>
-                <div>Plantation Yield: <strong>{currentYield} MT/Ha</strong></div>
-                <div>Seasonal Index: <strong>{seasonAnalysis.seasonalIndex}%</strong></div>
-                <div>Price Volatility: <strong>₹{Math.round(seasonAnalysis.volatility).toLocaleString()}</strong></div>
+            {/* API Status Panel */}
+            <div className={`mt-4 p-3 rounded-lg border ${
+              activeMode === "ai" 
+                ? "bg-blue-50 border-blue-200" 
+                : "bg-amber-50 border-amber-200"
+            }`}>
+              <div className="font-semibold mb-2" style={{
+                color: activeMode === "ai" ? "#1e40af" : "#92400e"
+              }}>
+                {activeMode === "ai" ? "AI Model Status" : "Manual Input Status"}
+              </div>
+              <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Peak: {seasonAnalysis.peakMonth}</span>
-                  <span>Lean: {seasonAnalysis.leanMonth}</span>
+                  <span style={{
+                    color: activeMode === "ai" ? "#1e40af" : "#92400e"
+                  }}>
+                    Mode:
+                  </span>
+                  <span className={`font-bold ${
+                    activeMode === "ai" ? "text-blue-600" : "text-amber-600"
+                  }`}>
+                    {activeMode === "ai" ? "AI-Powered" : "Manual"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{
+                    color: activeMode === "ai" ? "#1e40af" : "#92400e"
+                  }}>
+                    API Status:=
+                  </span>
+                  <span className={`font-bold ${apiResult && !error ? "text-green-600" : "text-red-600"}`}>
+                    {apiResult && !error ? "Connected" : error ? "Error" : "Not Connected"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{
+                    color: activeMode === "ai" ? "#1e40af" : "#92400e"
+                  }}>
+                    CIF Source:
+                  </span>
+                  <span className="font-bold text-gray-700">
+                    {simulationResults.cifSource === "user_input_spot_price" ? "Manual" : 
+                     simulationResults.cifSource === "model_prediction" ? "AI Model" : 
+                     simulationResults.cifSource}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{
+                    color: activeMode === "ai" ? "#1e40af" : "#92400e"
+                  }}>
+                    Risk Status:
+                  </span>
+                  <span className={`font-bold ${
+                    simulationResults.riskFlag.includes("Safe") || simulationResults.riskFlag.includes("High") 
+                      ? "text-green-600" 
+                      : "text-red-600"
+                  }`}>
+                    {simulationResults.riskFlag.includes("Safe") || simulationResults.riskFlag.includes("High") 
+                      ? "Farmer Safe" 
+                      : "Risk"}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* State Capacity Panel */}
-            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-blue-800 text-sm mb-2">State Capacity</h4>
-              <div className="text-xs text-blue-700 space-y-1">
-                <div>Area Covered: <strong>{currentStateData.areaCovered?.toLocaleString()} ha</strong></div>
-                <div>Potential Area: <strong>{currentStateData.potentialArea?.toLocaleString()} ha</strong></div>
-                <div>Coverage: <strong>{currentStateData.coveragePercentage}%</strong></div>
-                {currentStateData.processingMills && (
-                  <div>Processing Mills: <strong>{currentStateData.processingMills}</strong></div>
-                )}
-                {currentStateData.OER && (
-                  <div>OER: <strong>{currentStateData.OER}%</strong></div>
-                )}
+            {/* Price Source Info */}
+            {apiResult && (
+              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="font-semibold text-gray-800 mb-2">Price Information</div>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">CIF Price Used:</span>
+                    <span className="font-bold">₹{simulationResults.cifPrice}</span>
+                  </div>
+                  {activeMode === "ai" && simulationResults.predictedPrice && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">AI Prediction:</span>
+                      <span className="font-bold">₹{parseFloat(simulationResults.predictedPrice).toFixed(1)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Effective Duty:</span>
+                    <span className="font-bold">{simulationResults.effectiveDuty}%</span>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-3 mt-6 pt-4 border-t border-gray-200">
-              <button className="w-full bg-[#003366] text-white py-2.5 rounded-lg font-medium hover:bg-[#164523] transition-colors">
-                Run Simulation
-              </button>
-              <button className="w-full border border-gray-300 p-1 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+              {activeMode === "ai" ? (
+                <button 
+                  onClick={() => fetchSimulation(false, null)}
+                  disabled={loading}
+                  className="w-full bg-[#003366] text-white py-2.5 rounded-lg font-medium hover:bg-[#164523] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Running AI Model..." : "Recalculate AI Model"}
+                </button>
+              ) : (
+                <button 
+                  onClick={handleManualCalculate}
+                  disabled={loading || !spotPrice}
+                  className="w-full bg-[#003366] text-white py-2.5 rounded-lg font-medium hover:bg-bg-[#003366]-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Calculating..." : "Calculate with Manual Price"}
+                </button>
+              )}
+              
+              <button className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Save Scenario
               </button>
+              
               <button className="w-full border border-dashed border-gray-300 text-gray-600 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Compare with Baseline
               </button>
@@ -416,17 +700,25 @@ export default function ScenarioBuilder() {
 
         {/* Enhanced Results Panel - Blue Header */}
         <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+          <div className={`p-4 ${
+            activeMode === "ai" 
+              ? "bg-gradient-to-r from-[#0072bc] to-[#00509e]" 
+              : "bg-gradient-to-r from-[#0072bc] to-[#00509e]" 
+          } text-white`}>
             <div className="flex flex-col md:flex-row md:items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold">
                   {selectedState} Simulation Results
                 </h3>
                 <p className="text-sm opacity-90">
-                  Duty {duty}% · Cess {cess}% · FX {fx} ₹/USD · {seasonalMonth} · {plantationAge} yrs
+                  {activeMode === "ai" ? "🤖 AI-Powered" : "✏️ Manual Input"} • Duty {duty}% • Cess {cess}% • {seasonalMonth}
                 </p>
               </div>
-              <div className="mt-3 md:mt-0">
+              <div className="mt-3 md:mt-0 flex flex-col md:flex-row gap-4">
+                <div className="text-right">
+                  <div className="text-2xl font-bold">₹{simulationResults.landedCost}</div>
+                  <div className="text-sm opacity-90">Landed Cost (per kg)</div>
+                </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold">{simulationResults.selfSufficiency}%</div>
                   <div className="text-sm opacity-90">State Self-Sufficiency</div>
@@ -485,14 +777,24 @@ export default function ScenarioBuilder() {
                 />}
               </div>
 
-              {/* Enhanced Quick Results Summary - Plain Header */}
+              {/* Enhanced Quick Results Summary */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-                <div className="border-b border-gray-200 bg-gray-50 p-4">
-                  <h4 className="font-bold text-gray-800">Simulation Results Summary</h4>
+                <div className={`p-4 ${
+                  activeMode === "ai" 
+                    ? "bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200" 
+                    : "bg-gradient-to-r from-blue-50 to-blue-100 border-b border-amber-200"
+                }`}>
+                  <h4 className="font-bold text-gray-800">
+                    {activeMode === "ai" ? "🤖 AI Simulation Results" : "✏️ Manual Calculation Results"}
+                  </h4>
                   <p className="text-sm text-gray-600">Key metrics from current scenario</p>
                 </div>
                 <div className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="text-2xl font-bold text-[#1e5c2a]">₹{simulationResults.retailPrice}</div>
+                      <div className="text-xs text-gray-600">Retail Price</div>
+                    </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="text-2xl font-bold text-[#1e5c2a]">{simulationResults.selfSufficiency}%</div>
                       <div className="text-xs text-gray-600">State Self-Sufficiency</div>
@@ -502,25 +804,41 @@ export default function ScenarioBuilder() {
                       <div className="text-xs text-gray-600">Farmer Price</div>
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="text-2xl font-bold text-[#1e5c2a]">{simulationResults.importVolume}M MT</div>
-                      <div className="text-xs text-gray-600">Imports</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="text-2xl font-bold text-[#1e5c2a]">₹{simulationResults.fiscalCost}Cr</div>
                       <div className="text-xs text-gray-600">VGP Cost</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="text-lg font-bold text-blue-700">₹{simulationResults.cifPrice}</div>
+                        <div className="text-xs text-blue-600">CIF Price Used</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="text-lg font-bold text-green-700">{simulationResults.effectiveDuty}%</div>
+                      <div className="text-xs text-green-600">Effective Duty</div>
+                    </div>
+                    <div className="text-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                      <div className="text-lg font-bold text-purple-700">{simulationResults.importVolume}M MT</div>
+                      <div className="text-xs text-purple-600">Import Volume</div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Enhanced Policy Recommendation - Blue Header */}
+              {/* Enhanced Policy Recommendation */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+                <div className={`p-4 ${
+                  activeMode === "ai" 
+                    ? "bg-gradient-to-r from-[#0072bc] to-[#00509e]" 
+                    : "bg-gradient-to-r from-[#0072bc] to-[#00509e]"
+                } text-white`}>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-white rounded-full"></div>
-                    <h3 className="text-lg font-bold">{selectedState} Policy Recommendation</h3>
+                    <h3 className="text-lg font-bold">
+                      {selectedState} {activeMode === "ai" ? "AI" : "Manual"} Policy Recommendation
+                    </h3>
                     <div className="ml-auto bg-white/20 px-2 py-1 rounded text-xs">
-                      OFFICIAL ANALYSIS
+                      {activeMode === "ai" ? "AI-POWERED ANALYSIS" : "MANUAL ANALYSIS"}
                     </div>
                   </div>
                 </div>
@@ -530,9 +848,19 @@ export default function ScenarioBuilder() {
                       <p key={idx}>• {line}</p>
                     ))}
                   </div>
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="font-medium text-blue-900 mb-1">Suggested Action for {selectedState}</div>
-                    <div className="text-sm text-blue-800">
+                  <div className={`mt-4 p-4 rounded-lg border ${
+                    activeMode === "ai" 
+                      ? "bg-blue-50 border-blue-200" 
+                      : "bg-amber-50 border-amber-200"
+                  }`}>
+                    <div className={`font-medium mb-1 ${
+                      activeMode === "ai" ? "text-blue-900" : "text-amber-900"
+                    }`}>
+                      Suggested Action for {selectedState}
+                    </div>
+                    <div className={`text-sm ${
+                      activeMode === "ai" ? "text-blue-800" : "text-amber-800"
+                    }`}>
                       {duty >= 15 ? "Consider reducing duty to balance consumer impact while maintaining farmer support through targeted VGP." :
                        duty <= 5 ? "Consider increasing duty to better protect domestic farmers, especially during peak production season." :
                        "Maintain current duty level with close monitoring of global prices and domestic production trends."}
@@ -804,6 +1132,7 @@ function ControlInput({ label, value, setValue, explanation }) {
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <input
         type="number"
+        step="0.1"
         className="w-full rounded-lg border border-gray-300 p-1 focus:border-[#1e5c2a] focus:ring-[#1e5c2a]"
         value={value}
         onChange={(e) => setValue(+e.target.value)}

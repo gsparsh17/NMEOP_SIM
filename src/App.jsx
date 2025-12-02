@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import Overview from "./pages/Overview";
 import ScenarioBuilder from "./pages/ScenerioBuilder";
 import ImpactDashboard from "./pages/ImpactDashboard";
-import Diagnostics from "./pages/Diagnostics";
+// import Diagnostics from "./pages/Diagnostics";
+import FarmerPayoutCalculator from "./pages/FarmerPayoutCalculator";
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState("overview");
@@ -12,7 +13,8 @@ export default function App() {
     overview: <Overview />,
     scenario: <ScenarioBuilder />,
     impact: <ImpactDashboard />,
-    diagnostics: <Diagnostics />,
+    //diagnostics: <Diagnostics />,
+     payout: <FarmerPayoutCalculator />
   };
 
   return (
@@ -40,7 +42,7 @@ export default function App() {
       </div>
 
       {/* Accessibility Bar - Mobile Responsive */}
-      <div className="bg-[#f8f9fa] py-1 sm:py-2 px-2 sm:px-4 text-xs border-b border-gray-100 overflow-x-auto">
+      {/* <div className="bg-[#f8f9fa] py-1 sm:py-2 px-2 sm:px-4 text-xs border-b border-gray-100 overflow-x-auto">
         <div className="flex items-center justify-between">
           <span className="text-gray-600 text-[10px] sm:text-xs whitespace-nowrap hidden sm:inline">Accessibility Options:</span>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -53,7 +55,7 @@ export default function App() {
             <button className="px-2 py-0.5 sm:px-3 sm:py-1 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors text-[10px] sm:text-xs hidden sm:inline-block">हिंदी</button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* MAIN HEADER WITH ACTUAL LOGOS - Mobile Responsive */}
       <header className="bg-gradient-to-r from-blue-50 to-white shadow-md border-b border-gray-200 sticky top-0 z-50">
@@ -215,10 +217,16 @@ export default function App() {
                 active={activeScreen === "impact"}
                 onClick={setActiveScreen}
               />
-              <NavItem 
+              {/* <NavItem 
                 id="diagnostics" 
                 label="Data Control Room" 
                 active={activeScreen === "diagnostics"}
+                onClick={setActiveScreen}
+              /> */}
+              <NavItem 
+                id="payout" 
+                label="Farmers Payout Estimator" 
+                active={activeScreen === "payout"}
                 onClick={setActiveScreen}
               />
             </div>
@@ -255,10 +263,19 @@ export default function App() {
                     setMobileMenuOpen(false);
                   }}
                 />
-                <MobileNavItem 
+                {/* <MobileNavItem 
                   id="diagnostics" 
                   label="Data Control Room" 
                   active={activeScreen === "diagnostics"}
+                  onClick={(id) => {
+                    setActiveScreen(id);
+                    setMobileMenuOpen(false);
+                  }}
+                /> */}
+                <MobileNavItem 
+                  id="payout" 
+                  label="Farmers Payout Estimator" 
+                  active={activeScreen === "payout"}
                   onClick={(id) => {
                     setActiveScreen(id);
                     setMobileMenuOpen(false);
@@ -289,10 +306,16 @@ export default function App() {
                 active={activeScreen === "impact"}
                 onClick={setActiveScreen}
               />
-              <MobileBottomNavItem 
+              {/* <MobileBottomNavItem 
                 id="diagnostics" 
                 label="Data" 
                 active={activeScreen === "diagnostics"}
+                onClick={setActiveScreen}
+              /> */}
+              <MobileBottomNavItem 
+                id="payout" 
+                label="Payout" 
+                active={activeScreen === "payout"}
                 onClick={setActiveScreen}
               />
             </div>
@@ -369,7 +392,7 @@ export default function App() {
                   <span className="font-semibold text-[#003366]">Framework:</span> Follows NMEO-OP policy framework and Ministry guidelines.
                 </div>
                 <div className="text-gray-700">
-                  <span className="font-semibold text-[#003366]">Data Sources:</span> UN Comtrade, MCX, NMEO-OP, RBI.
+                  <span className="font-semibold text-[#003366]">Data Sources:</span> UN Comtrade, MCX, NMEO-OP, DGCI.
                 </div>
               </div>
             </div>
