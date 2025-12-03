@@ -583,13 +583,6 @@ export const policyActions = [
     risk: "⚠️ Amber",
     action: "Review duty structure",
     priority: "high"
-  },
-  {
-    category: "Weather",
-    indicator: "Monitor rainfall patterns",
-    risk: "🟢 Safe",
-    action: "Normal monsoon expected",
-    priority: "medium"
   }
 ];
 

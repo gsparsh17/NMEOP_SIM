@@ -106,7 +106,6 @@ export default function App() {
                     <span className="font-semibold text-[#138808]">Policy Decision Support System</span> · 
                     <span className="hidden xl:inline"> Ministry of Agriculture & Farmers Welfare · Government of India</span>
                   </p>
-                  <span className="bg-[#138808] text-white text-xs px-2 py-1 rounded">v2.1.5</span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1 hidden md:block">
                   Tariff Impact Navigation System for Crude Palm Oil Policy Making
@@ -146,20 +145,13 @@ export default function App() {
                     className="h-10 w-auto object-contain"
                   />
                 </div>
-                <div className="hidden xl:block">
-                  <img 
-                    src="/assets/awg-Photoroom.png" 
-                    alt="Agriculture Working Group" 
-                    className="h-10 w-auto object-contain"
-                  />
-                </div>
               </div>
               
               <div className="text-right">
                 <div className="flex items-center gap-4">
                   <div className="text-sm hidden md:block">
                     <div className="text-gray-600">Oil Palm Year:</div>
-                    <div className="font-semibold text-[#003366]">Nov 2024 - Oct 2025</div>
+                    <div className="font-semibold text-[#003366]">Nov 2025 - Oct 2026</div>
                   </div>
                   <div className="h-8 w-px bg-gray-300 hidden md:block"></div>
                   <div className="text-sm">
