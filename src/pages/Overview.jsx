@@ -906,21 +906,6 @@ export default function Overview() {
               </select>
             </div>
           </div>
-          
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Oil Palm Year</label>
-            <div className="relative">
-              <select
-                className="w-full rounded-xl border border-gray-300 text-sm focus:border-[#1e5c2a] focus:ring-[#1e5c2a] py-2 pl-3 pr-8 bg-white"
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-              >
-                {YEARS.map((o) => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-          </div>
         </div>
       </div>
 
