@@ -113,7 +113,6 @@ const PriceTrendChart = ({ ffbData, cpoData, selectedState = "Telangana" }) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h4 className="font-semibold text-gray-800">{selectedState} Price Trends</h4>
         <div className="text-xs text-gray-600">
           Current: FFB ₹{currentFFB.toLocaleString()}, CPO ₹{currentCPO.toLocaleString()}
         </div>

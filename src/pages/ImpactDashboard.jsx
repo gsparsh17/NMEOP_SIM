@@ -16,10 +16,14 @@ import {
   missionAlignmentData,
   ffbPriceTrend,
   cpoPriceTrend,
+  nmeoOPDetailedData
 } from "../data/staticData";
 import VPFPVGPChart from "../components/charts/VPFPVGPChart";
 import AreaProductionChart from "../components/charts/AreaProductionChart";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
+import NMEOProgressChart from "../components/charts/NMEOProgressChart";
+import StateTargetsTable from "../components/charts/StateTargetsTable";
+import HistoricalExpansionChart from "../components/charts/HistoricalExpansionChart";
 import StabilityCard from "../components/cards/StabilityCard";
 
 export default function ImpactDashboard() {
@@ -109,6 +113,29 @@ export default function ImpactDashboard() {
     ? ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
     : ["Nov-Oct 2019-20", "Nov-Oct 2020-21", "Nov-Oct 2021-22", "Nov-Oct 2022-23", "Nov-Oct 2023-24", "Nov-Oct 2024-25"];
 
+  // Get NMEO-OP progress data for the selected state
+  const nmeoProgressData = useMemo(() => {
+    if (stateFilter === "All-India") {
+      return {
+        currentArea: nmeoOPDetailedData.nationalTargets.area.current,
+        target2025: nmeoOPDetailedData.nationalTargets.area.target2025,
+        progressPercentage: nmeoOPDetailedData.nationalTargets.area.progressPercentage,
+        productionCurrent: nmeoOPDetailedData.nationalTargets.production.current,
+        productionTarget: nmeoOPDetailedData.nationalTargets.production.target2025
+      };
+    } else {
+      const stateData = nmeoOPDetailedData.stateExpansionTargets[stateFilter];
+      if (!stateData) return null;
+      return {
+        currentArea: stateData.currentArea / 1000, // Convert to '000 ha
+        target2025: (stateData.currentArea + stateData.total) / 1000,
+        progressPercentage: (stateData.currentArea / stateData.potentialArea) * 100,
+        productionCurrent: null, // Not available in PDF
+        productionTarget: null
+      };
+    }
+  }, [stateFilter]);
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       {/* Page Header - Blue Header */}
@@ -143,123 +170,126 @@ export default function ImpactDashboard() {
           </div>
         </div>
 
-        {/* News Cards: Price snapshots that respond to Year/Month filters */}
+        {/* Mission Quick Stats */}
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Price Snapshot</div>
-                  <div className="text-sm text-gray-600">FFB (Fresh Fruit Bunches)</div>
+                  <div className="text-xs font-semibold text-gray-500">National Target 2025-26</div>
+                  <div className="text-sm text-gray-600">Oil Palm Area</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-blue-700">
+                    10.00 lakh ha
+                  </div>
+                  <div className="text-xs text-gray-500">From 3.70 lakh ha (2021)</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-gray-600">Target: Additional 6.5 lakh ha under NMEO-OP</div>
+            </div>
+
+            <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500">CPO Production Target</div>
+                  <div className="text-sm text-gray-600">By 2025-26</div>
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-green-700">
-                    {selectedPricePoint && selectedPricePoint.ffb ? `₹${selectedPricePoint.ffb.toLocaleString()}` : '—'}
+                    11.20 lakh tonnes
                   </div>
-                  <div className="text-xs text-gray-500">{selectedPricePoint ? selectedPricePoint.label : 'Select year/month'}</div>
+                  <div className="text-xs text-gray-500">From 2.72 lakh tonnes (2021)</div>
                 </div>
               </div>
-              <div className="mt-3 text-xs text-gray-600">Source: Telangana data (used as proxy for all states)</div>
+              <div className="mt-3 text-xs text-gray-600">Target: 4x increase in domestic CPO production</div>
             </div>
 
             <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold text-gray-500">Price Snapshot</div>
-                  <div className="text-sm text-gray-600">CPO (Crude Palm Oil)</div>
+                  <div className="text-xs font-semibold text-gray-500">Current Import Dependency</div>
+                  <div className="text-sm text-gray-600">Palm Oil Imports</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-yellow-700">
-                    {selectedPricePoint && selectedPricePoint.cpo ? `₹${selectedPricePoint.cpo.toLocaleString()}` : '—'}
+                  <div className="text-lg font-bold text-amber-700">
+                    56%
                   </div>
-                  <div className="text-xs text-gray-500">{selectedPricePoint ? selectedPricePoint.label : 'Select year/month'}</div>
+                  <div className="text-xs text-gray-500">₹80,000 crore/year</div>
                 </div>
               </div>
-              <div className="mt-3 text-xs text-gray-600">Source: Telangana data (used as proxy for all states)</div>
+              <div className="mt-3 text-xs text-gray-600">NMEO-OP aims to reduce import dependency</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mission Status Overview - Plain Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-bold">NMEO-OP Mission Status</h3>
-            </div>
-            <div className="text-sm">2030 Target Tracking</div>
-          </div>
-        </div>
-        
-        {/* <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <MissionProgress 
-              title="Area Expansion"
-              current={missionAlignmentData.areaExpansion.current}
-              target={missionAlignmentData.areaExpansion.target2030}
-              unit="Million ha"
-              status={missionAlignmentData.areaExpansion.status}
-              description={missionAlignmentData.areaExpansion.description}
-            />
-            <MissionProgress 
-              title="Farmer Viability"
-              current={missionAlignmentData.farmerViability.score}
-              target={100}
-              unit="Score"
-              status={missionAlignmentData.farmerViability.trend}
-              description={missionAlignmentData.farmerViability.description}
-            />
-            <MissionProgress 
-              title="Cluster Health"
-              current={missionAlignmentData.clusterHealth.millsUtilization}
-              target={100}
-              unit="Utilization %"
-              status={missionAlignmentData.clusterHealth.status}
-              description={missionAlignmentData.clusterHealth.description}
-            />
-          </div>
-        </div> */}
-      </div>
-
-       {/* Enhanced Filters - Plain Header */}
+      {/* Enhanced Filters - Blue Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
         
         <div className="p-6">
-          <div className="flex flex-wrap gap-6 items-end">
+          <div className="flex flex-wrap gap-6 items-end justify-center">
             <FilterSelect
               label="State/UT"
               value={stateFilter}
               onChange={setStateFilter}
               options={STATES}
             />
-            {/* <FilterSelect
-              label="Year Type"
-              value={yearTypeFilter}
-              onChange={setYearTypeFilter}
-              options={["financialYear", "oilYear"]}
-            /> */}
             <FilterSelect
               label="Year"
               value={yearFilter}
               onChange={setYearFilter}
               options={yearOptions}
             />
-            <FilterSelect
-              label="Month"
-              value={monthFilter}
-              onChange={setMonthFilter}
-              options={MONTHS}
-            />
-              {/* <button className="bg-[#003366] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#164523] transition-colors flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                Generate Report
-              </button> */}
           </div>
         </div>
       </div>
+
+      {/* Mission Status Overview - Blue Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-bold">NMEO-OP Mission Status - {stateFilter}</h3>
+            </div>
+            <div className="text-sm">2025-26 Target Tracking</div>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <MissionProgress 
+              title="Area Expansion"
+              current={stateFilter === "All-India" 
+                ? nmeoOPDetailedData.nationalTargets.area.current 
+                : (filteredData.stateInfo.areaCovered / 1000).toFixed(2)}
+              target={stateFilter === "All-India" 
+                ? nmeoOPDetailedData.nationalTargets.area.target2025 
+                : ((filteredData.stateInfo.areaCovered + filteredData.stateInfo.totalExpansionTarget) / 1000).toFixed(2)}
+              unit="lakh ha"
+              status={stateFilter === "All-India" ? "on-track" : 
+                     filteredData.stateInfo.coveragePercentage > 50 ? "on-track" :
+                     filteredData.stateInfo.coveragePercentage > 30 ? "improving" :
+                     filteredData.stateInfo.coveragePercentage > 10 ? "stable" : "needs-attention"}
+              description={stateFilter === "All-India" 
+                ? "National target: 10 lakh ha by 2025-26" 
+                : `${filteredData.stateInfo.coveragePercentage}% of potential area covered`}
+            />
+            <MissionProgress 
+              title="Production Growth"
+              current={nmeoOPDetailedData.nationalTargets.production.current}
+              target={nmeoOPDetailedData.nationalTargets.production.target2025}
+              unit="lakh tonnes"
+              status={stateFilter === "All-India" ? "improving" : "stable"}
+              description={stateFilter === "All-India" 
+                ? "Target: 11.20 lakh tonnes CPO by 2025-26" 
+                : "State production data being compiled"}
+            />
+          </div>
+        </div>
+      </div>
+
+       
 
       {/* State Overview Card - Blue Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
@@ -281,87 +311,116 @@ export default function ImpactDashboard() {
         </div>
         
         <div className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="text-2xl font-bold text-blue-700">{filteredData.stateInfo.coveragePercentage}%</div>
                 <div className="text-sm text-blue-600 mt-1">Potential Area Covered</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {filteredData.stateInfo.areaCovered?.toLocaleString()} / {filteredData.stateInfo.potentialArea?.toLocaleString()} ha
+                </div>
               </div>
 
               <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="text-2xl font-bold text-green-700">
-                  {yearPriceSummary && yearPriceSummary.avgFFB ? `₹${yearPriceSummary.avgFFB.toLocaleString()}` : (filteredData.stateInfo.currentFFBPrice ? `₹${filteredData.stateInfo.currentFFBPrice}` : '₹19,681')}
+                  {yearPriceSummary && yearPriceSummary.avgFFB ? `₹${yearPriceSummary.avgFFB.toLocaleString()}` : (filteredData.stateInfo.currentFFBPrice ? `₹${filteredData.stateInfo.currentFFBPrice}` : '—')}
                 </div>
                 <div className="text-sm text-green-600 mt-1">Avg FFB (₹/MT)</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {filteredData.stateInfo.OER ? `OER: ${filteredData.stateInfo.OER}%` : 'OER: —'}
+                </div>
               </div>
 
-              {/* <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="text-2xl font-bold text-purple-700">{filteredData.stateInfo.processingMills || 0}</div>
-                <div className="text-sm text-purple-600 mt-1">Processing Mills</div>
-              </div> */}
               <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="text-2xl font-bold text-orange-700">{filteredData.stateInfo.totalExpansionTarget?.toLocaleString() || 0}</div>
-              <div className="text-sm text-orange-600 mt-1">Expansion Target (ha)</div>
-            </div>
+                <div className="text-2xl font-bold text-orange-700">
+                  {filteredData.stateInfo.totalExpansionTarget?.toLocaleString() || '—'}
+                </div>
+                <div className="text-sm text-orange-600 mt-1">NMEO-OP Target (ha)</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {stateFilter !== "All-India" && nmeoOPDetailedData.stateExpansionTargets[stateFilter] 
+                    ? `${(nmeoOPDetailedData.stateExpansionTargets[stateFilter].total / 1000).toFixed(1)}K ha (5-yr)`
+                    : "5-year expansion target"}
+                </div>
+              </div>
 
               <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
                 <div className="text-2xl font-bold text-yellow-700">
                   {yearPriceSummary && yearPriceSummary.avgCPO ? `₹${yearPriceSummary.avgCPO.toLocaleString()}` : (filteredData.stateInfo.currentCPOPrice ? `₹${filteredData.stateInfo.currentCPOPrice}` : '—')}
                 </div>
                 <div className="text-sm text-yellow-600 mt-1">Avg CPO (₹/MT)</div>
-              </div>
-              {/* FFB & CPO cards (respect filters) - placed adjacent to Avg CPO */}
-              <div className="text-center p-4 bg-green-50/60 rounded-lg border border-green-200">
-                <div className="text-2xl font-bold text-green-700">
-                  {priceCards && priceCards.ffb ? `₹${priceCards.ffb.toLocaleString()}` : '—'}
+                <div className="text-xs text-gray-500 mt-1">
+                  {filteredData.stateInfo.currentCPOPrice ? 'Latest available' : '—'}
                 </div>
-                <div className="text-sm text-green-600 mt-1">FFB Price (₹/MT)</div>
-                <div className="text-xs text-gray-500 mt-1">{priceCards ? priceCards.label : ''}</div>
-              </div>
-
-              <div className="text-center p-4 bg-yellow-50/60 rounded-lg border border-yellow-200">
-                <div className="text-2xl font-bold text-yellow-700">
-                  {priceCards && priceCards.cpo ? `₹${priceCards.cpo.toLocaleString()}` : '—'}
-                </div>
-                <div className="text-sm text-yellow-600 mt-1">CPO Price (₹/MT)</div>
-                <div className="text-xs text-gray-500 mt-1">{priceCards ? priceCards.label : ''}</div>
               </div>
             </div>
           </div>
         </div>
 
-      {/* Key Charts - Blue Header for first chart, Plain for second */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* First Chart - Blue Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-            <h4 className="font-bold">Farmer Income Protection Mechanism</h4>
-            <p className="text-sm opacity-90">VP vs FP with VGP support analysis</p>
-          </div>
-          <div className="p-5">
-            <p className="text-sm text-gray-600 mb-4">
-              Shows the relationship between Govt-assured Price (VP), Market Price (FP), and Viability Gap Funding (VGP). When FP falls below VP, Govt provides VGP support to protect farmer incomes.
-            </p>
-            <VPFPVGPChart data={vpFpVgpData} />
+      {/* NMEO-OP Detailed Progress Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">NMEO-OP Mission Progress</h3>
+                <p className="text-sm opacity-90">
+                  {stateFilter === "All-India" 
+                    ? "National Targets: 10 lakh ha by 2025-26 | 11.20 lakh tonnes CPO" 
+                    : `${stateFilter} 5-Year Target: ${filteredData.stateInfo.totalExpansionTarget?.toLocaleString()} ha`
+                  }
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold">
+                {stateFilter === "All-India" 
+                  ? `${nmeoOPDetailedData.nationalTargets.area.progressPercentage.toFixed(1)}%`
+                  : `${filteredData.stateInfo.coveragePercentage?.toFixed(1)}%`
+                }
+              </div>
+              <div className="text-sm opacity-90">
+                {stateFilter === "All-India" ? "2025 Target Progress" : "Area Coverage"}
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Second Chart - Plain Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-            <h4 className="font-bold">Domestic Production Growth Trajectory</h4>
-            <p className="text-sm">NMEO-OP Targets vs Actual Performance</p>
-          </div>
-          <div className="p-5">
-            <p className="text-sm text-gray-600 mb-4">
-              Tracks area expansion and production growth under NMEO-OP. Achieving these targets is crucial for reducing import dependence and ensuring edible oil security.
-            </p>
-            <AreaProductionChart data={areaProductionData} />
-          </div>
+        
+        <div className="p-6">
+          <NMEOProgressChart 
+            selectedState={stateFilter}
+            stateData={filteredData.stateInfo}
+          />
         </div>
       </div>
 
-      {/* Price Trends Section - Blue Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+      {/* State-wise Targets and Historical Progress */}
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
+        {/* State Targets Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+            <h4 className="font-bold">
+              {stateFilter === "All-India" ? "State-wise NMEO-OP Targets" : `${stateFilter} NMEO-OP Targets`}
+            </h4>
+            <p className="text-sm opacity-90">5-year area expansion targets (2021-22 to 2025-26)</p>
+          </div>
+          <div className="p-5">
+            <p className="text-sm text-gray-600 mb-4">
+              Detailed breakdown of NMEO-OP expansion targets by state. Targets are based on potential area identified by the 2020 Re-assessment Committee.
+            </p>
+            <StateTargetsTable selectedState={stateFilter} />
+          </div>
+        </div>
+
+      </div>
+
+      {/* Key Charts - Blue Header for first chart, Plain for second */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Price Trends Section - Blue Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -375,89 +434,75 @@ export default function ImpactDashboard() {
         </div>
         <div className="p-6">
           <p className="text-sm text-gray-600 mb-4">
-            Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil in {stateFilter} region.
+            Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil. Using Telangana data as proxy for price trends across states.
           </p>
           <PriceTrendChart ffbData={ffbPriceTrend} cpoData={cpoPriceTrend} selectedState={stateFilter}/>
         </div>
       </div>
 
-      {/* Filtered price table replaced by compact price cards (see State Overview) */}
 
-      {/* Mission Health Dashboard - Blue Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold">Mission Health Indicators</h3>
-              <p className="text-sm opacity-90">
-                Critical metrics that determine long-term success of oil palm cultivation in India
-              </p>
-            </div>
-            <div className="bg-white/20 px-3 py-1.5 rounded text-sm">
-              MONITORING DASHBOARD
-            </div>
+                 {/* Historical Expansion Chart */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+            <h4 className="font-bold">Historical Area Expansion</h4>
+            <p className="text-sm opacity-90">Annual targets vs achievements (2014-15 to 2020-21)</p>
+          </div>
+          <div className="p-5">
+            <p className="text-sm text-gray-600 mb-4">
+              Historical performance of area expansion under previous schemes (NMOOP/NFSM-OP). Shows achievement rates and annual progress.
+            </p>
+            <HistoricalExpansionChart selectedState={stateFilter} />
           </div>
         </div>
-        
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <StabilityCard
-              label="Farmer Retention Score"
-              value={(nmeoOpProgress.farmerRetentionScore * 100).toFixed(0) + "%"}
-              trend="stable"
-              status="good"
-              description="Measures farmer confidence to continue with oil palm instead of shifting to other crops. Higher scores indicate better policy effectiveness."
-            />
-            <StabilityCard
-              label="Cluster Access to Mills"
-              value={clusterStatus.millsNearby + "%"}
-              trend="improving"
-              status="good"
-              description={`Percentage of farmers within efficient distance of processing mills. Current average distance: ${clusterStatus.avgDistanceKm} km.`}
-            />
-            <StabilityCard
-              label="Farmer Income Risk Level"
-              value={farmerRisk.riskLevel}
-              trend="watch"
-              status={farmerRisk.riskLevel === "Red" ? "critical" : farmerRisk.riskLevel === "Amber" ? "warning" : "good"}
-              description={farmerRisk.comment}
-            />
-          </div>
 
-          {/* Risk Interpretation Guide - Plain Header */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200 bg-gray-50 p-4">
-              <h4 className="font-bold text-gray-800">Risk Level Interpretation</h4>
-              <p className="text-sm text-gray-600">Understanding monitoring status indicators</p>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <div>
-                    <div className="font-medium text-green-800 text-sm">Green</div>
-                    <div className="text-xs text-green-700">Normal operations</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                  <div>
-                    <div className="font-medium text-amber-800 text-sm">Amber</div>
-                    <div className="text-xs text-amber-700">Monitor closely</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <div>
-                    <div className="font-medium text-red-800 text-sm">Red</div>
-                    <div className="text-xs text-red-700">Immediate action required</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
+
+      
+
+      {/* State Production Data (if available) */}
+      {stateFilter !== "All-India" && filteredData.stateInfo.productionData && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+            <h4 className="font-bold">{stateFilter} Production History</h4>
+            <p className="text-sm opacity-90">FFB and CPO production data (2014-15 to 2020-21)</p>
+          </div>
+          <div className="p-6">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Year</th>
+                    <th className="px-4 py-2 text-right">FFB Production (MT)</th>
+                    <th className="px-4 py-2 text-right">CPO Production (MT)</th>
+                    <th className="px-4 py-2 text-right">Extraction Rate</th>
+                    <th className="px-4 py-2 text-right">Area Expansion (ha)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {Object.entries(filteredData.stateInfo.productionData).map(([year, data]) => (
+                    <tr key={year} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 font-medium">{year}</td>
+                      <td className="px-4 py-2 text-right">
+                        {data.ffb ? data.ffb.toLocaleString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {data.cpo ? data.cpo.toLocaleString() : 'N/A'}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {data.ffb && data.cpo ? ((data.cpo / data.ffb) * 100).toFixed(1) + '%' : 'N/A'}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        {/* You would need to add area expansion data here from the PDF tables */}
+                        {year === "2020-21" ? filteredData.stateInfo.areaCovered?.toLocaleString() + ' ha' : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Policy Implications - Blue Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mt-6">
@@ -473,22 +518,40 @@ export default function ImpactDashboard() {
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="font-medium text-blue-900 mb-2">When Farmer Retention Score declines:</div>
+              <div className="font-medium text-blue-900 mb-2">When Area Coverage is below 30%:</div>
               <ul className="text-blue-800 space-y-1 ml-5 list-disc">
-                <li>Review and adjust VGP support levels</li>
-                <li>Ensure timely subsidy payments</li>
-                <li>Consider temporary duty protection</li>
-                <li>Enhance extension services support</li>
+                <li>Increase awareness campaigns about NMEO-OP benefits</li>
+                <li>Strengthen extension services and farmer training</li>
+                <li>Provide additional incentives for new adopters</li>
+                <li>Develop processing infrastructure in underserved areas</li>
               </ul>
             </div>
             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="font-medium text-green-900 mb-2">When Cluster Access improves:</div>
+              <div className="font-medium text-green-900 mb-2">When Price Support is needed:</div>
               <ul className="text-green-800 space-y-1 ml-5 list-disc">
-                <li>Accelerate area expansion in accessible regions</li>
-                <li>Focus on yield improvement programs</li>
-                <li>Plan additional processing capacity</li>
-                <li>Strengthen market linkages</li>
+                <li>Activate Viability Gap Payment (VGP) mechanism</li>
+                <li>Review import duty structure to protect domestic prices</li>
+                <li>Ensure timely subsidy payments to farmers</li>
+                <li>Monitor global CPO prices and adjust support accordingly</li>
               </ul>
+            </div>
+          </div>
+          
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="font-medium text-amber-900 mb-2">NMEO-OP Key Success Factors:</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <div className="font-bold text-amber-700">Price Assurance</div>
+                <div className="text-amber-800">Viability Price (VP) = 14.3% of 5-yr avg CPO price</div>
+              </div>
+              <div>
+                <div className="font-bold text-amber-700">Farmer Support</div>
+                <div className="text-amber-800">₹20,000-29,000/ha planting material subsidy</div>
+              </div>
+              <div>
+                <div className="font-bold text-amber-700">Infrastructure</div>
+                <div className="text-amber-800">Processing mills & custom harvesting support</div>
+              </div>
             </div>
           </div>
         </div>
@@ -498,7 +561,7 @@ export default function ImpactDashboard() {
 }
 
 function MissionProgress({ title, current, target, unit, status, description }) {
-  const percentage = (current / target) * 100;
+  const percentage = target ? ((parseFloat(current) / parseFloat(target)) * 100) : 0;
   
   const statusColor = status === "on-track" ? "text-green-600" : 
                      status === "improving" ? "text-blue-600" : 
@@ -521,7 +584,7 @@ function MissionProgress({ title, current, target, unit, status, description }) 
         <div 
           className={`absolute top-0 left-0 w-20 h-20 rounded-full border-8 ${statusColor} border-t-8 border-r-8 border-b-8 border-l-8 -rotate-45`}
           style={{ 
-            clipPath: `inset(0 ${100 - percentage}% 0 0)`,
+            clipPath: `inset(0 ${100 - Math.min(percentage, 100)}% 0 0)`,
             borderColor: status === "on-track" ? "#10b981" : 
                         status === "improving" ? "#3b82f6" : 
                         status === "stable" ? "#f59e0b" : "#ef4444"
@@ -529,7 +592,9 @@ function MissionProgress({ title, current, target, unit, status, description }) 
         ></div>
       </div>
       <div className="text-xs text-gray-600 mb-2">{description}</div>
-      <div className="text-xs text-gray-500 mb-2">Target: {target} {unit}</div>
+      {target && target !== "—" && (
+        <div className="text-xs text-gray-500 mb-2">Target: {target} {unit}</div>
+      )}
       <div className={`text-xs font-medium px-2 py-1 rounded-full ${statusColor} ${statusBg}`}>
         {status === "on-track" ? "ON TRACK" : 
          status === "improving" ? "IMPROVING" : 
@@ -545,7 +610,7 @@ function FilterSelect({ label, value, onChange, options }) {
       <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
       <div className="relative">
         <select
-          className="w-full rounded-lg border border-gray-300 text-sm focus:border-[#1e5c2a] focus:ring-[#1e5c2a] py-2 pl-3 pr-8 bg-white"
+          className="w-full rounded-2xl border border-gray-300 text-sm focus:border-[#1e5c2a] focus:ring-[#1e5c2a] py-2 pl-3 pr-8 bg-white"
           value={value}
           onChange={(e) => onChange(e.target.value)}
         >
@@ -553,26 +618,6 @@ function FilterSelect({ label, value, onChange, options }) {
             <option key={o} value={o}>{o}</option>
           ))}
         </select>
-      </div>
-    </div>
-  );
-}
-
-function ChartCard({ title, explanation, children, isBlueHeader = false }) {
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      {isBlueHeader ? (
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <h4 className="font-bold">{title}</h4>
-        </div>
-      ) : (
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h4 className="font-bold text-gray-800">{title}</h4>
-        </div>
-      )}
-      <div className="p-5">
-        <p className="text-sm text-gray-600 mb-4">{explanation}</p>
-        {children}
       </div>
     </div>
   );

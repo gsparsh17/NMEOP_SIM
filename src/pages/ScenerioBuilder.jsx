@@ -421,7 +421,7 @@ export default function ScenarioBuilder() {
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-2xl font-bold text-[#003366]">Tariff Strategy Builder</h2>
                 <div className={`px-3 py-1 rounded text-sm font-medium ${
-                  "bg-blue-600 text-white"
+                  "bg-[#003366] text-white"
                 }`}>
                   {activeMode === "ai" ? "AI-POWERED" : "MANUAL INPUT"}
                 </div>
@@ -567,7 +567,7 @@ export default function ScenarioBuilder() {
             />
 
             <ControlInput
-              label="Additional Cesses"
+              label="Agricultural Cesses"
               value={cess}
               setValue={setCess}
               explanation="Sector-specific levies and charges"
