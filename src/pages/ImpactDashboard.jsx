@@ -118,7 +118,7 @@ export default function ImpactDashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-[#003366]">Mission Alignment Tracker</h2>
+                <h2 className="text-2xl font-bold text-[#003366]">NMEO-OP Alignment Tracker</h2>
                 <div className="bg-[#003366] text-white px-3 py-1 rounded text-sm font-medium">
                   <span>OFFICIAL MONITORING</span>
                 </div>

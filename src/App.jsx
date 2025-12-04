@@ -205,7 +205,7 @@ export default function App() {
               />
               <NavItem 
                 id="impact" 
-                label="Mission Alignment Tracker" 
+                label="NMEO-OP Alignment Tracker" 
                 active={activeScreen === "impact"}
                 onClick={setActiveScreen}
               />
@@ -248,7 +248,7 @@ export default function App() {
                 />
                 <MobileNavItem 
                   id="impact" 
-                  label="Mission Alignment Tracker" 
+                  label="NMEO-OP Alignment Tracker" 
                   active={activeScreen === "impact"}
                   onClick={(id) => {
                     setActiveScreen(id);
