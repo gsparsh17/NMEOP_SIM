@@ -386,7 +386,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
         </div>
       )}
     </div>
-    <div className="flex justify-center bg-gray-50 rounded-lg p-4">
+    <div className="flex justify-cente rounded-lg p-2">
       <img 
         src={`data:image/png;base64,${palmOilData.graph_image}`} 
         alt="Palm Oil Price Chart"
