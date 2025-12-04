@@ -663,7 +663,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
             </div>
           </div>
           
-          <div className="flex-1 min-w-[200px]">
+          {/* <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">Oil Palm Year</label>
             <div className="relative">
               <select
@@ -676,9 +676,9 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
                 ))}
               </select>
             </div>
-          </div>
+          </div> */}
           
-          <div className="flex-1 min-w-[200px]">
+          {/* <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">Scenario Mode</label>
             <div className="relative">
               <select
@@ -691,7 +691,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
                 ))}
               </select>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -715,7 +715,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
         </div>
         
         <div className="p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="text-xs text-gray-600 font-medium mb-1">Potential Area</div>
               <div className="text-lg font-bold text-gray-800">
@@ -730,12 +730,6 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
               <div className="text-xs text-green-600 mt-1">{currentStateData.coveragePercentage}% coverage</div>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-600 font-medium mb-1">Processing Mills</div>
-              <div className="text-lg font-bold text-gray-800">
-                {currentStateData.processingMills || 0} units
-              </div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div className="text-xs text-gray-600 font-medium mb-1">Expansion Target</div>
               <div className="text-lg font-bold text-gray-800">
                 {currentStateData.totalExpansionTarget?.toLocaleString()} ha
@@ -744,6 +738,42 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
           </div>
         </div>
       </div>
+      {/* State Production Data */}
+      {selectedState !== "All-India" && currentStateData.productionData && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            {selectedState} Production History
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left">Year</th>
+                  <th className="px-4 py-2 text-right">FFB Production (MT)</th>
+                  <th className="px-4 py-2 text-right">CPO Production (MT)</th>
+                  <th className="px-4 py-2 text-right">Extraction Rate</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {Object.entries(currentStateData.productionData).map(([year, data]) => (
+                  <tr key={year} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 font-medium">{year}</td>
+                    <td className="px-4 py-2 text-right">
+                      {data.ffb ? data.ffb.toLocaleString() : 'N/A'}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      {data.cpo ? data.cpo.toLocaleString() : 'N/A'}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      {data.ffb && data.cpo ? ((data.cpo / data.ffb) * 100).toFixed(1) + '%' : 'N/A'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Alert Strips */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -966,42 +996,6 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
         </ChartCard>
       </div>
 
-      {/* State Production Data */}
-      {selectedState !== "All-India" && currentStateData.productionData && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            {selectedState} Production History
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left">Year</th>
-                  <th className="px-4 py-2 text-right">FFB Production (MT)</th>
-                  <th className="px-4 py-2 text-right">CPO Production (MT)</th>
-                  <th className="px-4 py-2 text-right">Extraction Rate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {Object.entries(currentStateData.productionData).map(([year, data]) => (
-                  <tr key={year} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium">{year}</td>
-                    <td className="px-4 py-2 text-right">
-                      {data.ffb ? data.ffb.toLocaleString() : 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      {data.cpo ? data.cpo.toLocaleString() : 'N/A'}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      {data.ffb && data.cpo ? ((data.cpo / data.ffb) * 100).toFixed(1) + '%' : 'N/A'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

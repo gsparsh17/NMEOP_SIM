@@ -687,9 +687,9 @@ export default function ScenarioBuilder() {
                 </button>
               )}
               
-              <button className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+              {/* <button className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Save Scenario
-              </button>
+              </button> */}
               
               <button className="w-full border border-dashed border-gray-300 text-gray-600 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Compare with Baseline

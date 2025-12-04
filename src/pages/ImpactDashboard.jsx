@@ -45,6 +45,26 @@ export default function ImpactDashboard() {
     };
   }, [stateFilter, yearTypeFilter, yearFilter, monthFilter]);
 
+  // Compute average FFB / CPO for the selected year from Telangana price data
+  const yearPriceSummary = useMemo(() => {
+    if (!yearFilter || yearFilter === "All Years") return null;
+    const yearType = yearTypeFilter; // e.g. 'financialYear' or 'oilYear'
+    const dataArr = telanganaPriceData[yearType] || [];
+    const yearObj = dataArr.find(y => y.year === yearFilter);
+    if (!yearObj) return null;
+    const monthsData = yearObj.data || [];
+    const avg = (arr, key) => {
+      const vals = arr.map(d => d[key]).filter(v => typeof v === 'number');
+      if (!vals.length) return null;
+      return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+    };
+    return {
+      avgFFB: avg(monthsData, 'ffb'),
+      avgCPO: avg(monthsData, 'cpo'),
+      monthsCount: monthsData.length
+    };
+  }, [yearFilter, yearTypeFilter]);
+
   // Get year options based on year type
   const yearOptions = yearTypeFilter === "financialYear" 
     ? ["All Years", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
@@ -137,12 +157,12 @@ export default function ImpactDashboard() {
               onChange={setStateFilter}
               options={STATES}
             />
-            <FilterSelect
+            {/* <FilterSelect
               label="Year Type"
               value={yearTypeFilter}
               onChange={setYearTypeFilter}
               options={["financialYear", "oilYear"]}
-            />
+            /> */}
             <FilterSelect
               label="Year"
               value={yearFilter}
@@ -155,12 +175,12 @@ export default function ImpactDashboard() {
               onChange={setMonthFilter}
               options={["All Months", ...MONTHS]}
             />
-              <button className="bg-[#003366] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#164523] transition-colors flex items-center gap-2">
+              {/* <button className="bg-[#003366] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#164523] transition-colors flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 Generate Report
-              </button>
+              </button> */}
           </div>
         </div>
       </div>
@@ -185,28 +205,37 @@ export default function ImpactDashboard() {
         </div>
         
         <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="text-2xl font-bold text-blue-700">{filteredData.stateInfo.coveragePercentage}%</div>
-              <div className="text-sm text-blue-600 mt-1">Potential Area Covered</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="text-2xl font-bold text-green-700">
-                {filteredData.stateInfo.currentFFBPrice ? `₹${filteredData.stateInfo.currentFFBPrice}` : 'N/A'}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="text-2xl font-bold text-blue-700">{filteredData.stateInfo.coveragePercentage}%</div>
+                <div className="text-sm text-blue-600 mt-1">Potential Area Covered</div>
               </div>
-              <div className="text-sm text-green-600 mt-1">Current FFB Price</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="text-2xl font-bold text-purple-700">{filteredData.stateInfo.processingMills || 0}</div>
-              <div className="text-sm text-purple-600 mt-1">Processing Mills</div>
-            </div>
-            <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
+
+              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="text-2xl font-bold text-green-700">
+                  {yearPriceSummary && yearPriceSummary.avgFFB ? `₹${yearPriceSummary.avgFFB.toLocaleString()}` : (filteredData.stateInfo.currentFFBPrice ? `₹${filteredData.stateInfo.currentFFBPrice}` : '₹19,681')}
+                </div>
+                <div className="text-sm text-green-600 mt-1">Avg FFB (₹/MT)</div>
+              </div>
+
+              {/* <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="text-2xl font-bold text-purple-700">{filteredData.stateInfo.processingMills || 0}</div>
+                <div className="text-sm text-purple-600 mt-1">Processing Mills</div>
+              </div> */}
+              <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-200">
               <div className="text-2xl font-bold text-orange-700">{filteredData.stateInfo.totalExpansionTarget?.toLocaleString() || 0}</div>
               <div className="text-sm text-orange-600 mt-1">Expansion Target (ha)</div>
             </div>
+
+              <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="text-2xl font-bold text-yellow-700">
+                  {yearPriceSummary && yearPriceSummary.avgCPO ? `₹${yearPriceSummary.avgCPO.toLocaleString()}` : (filteredData.stateInfo.currentCPOPrice ? `₹${filteredData.stateInfo.currentCPOPrice}` : '—')}
+                </div>
+                <div className="text-sm text-yellow-600 mt-1">Avg CPO (₹/MT)</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Key Charts - Blue Header for first chart, Plain for second */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
