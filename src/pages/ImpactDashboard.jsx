@@ -65,6 +65,46 @@ export default function ImpactDashboard() {
     };
   }, [yearFilter, yearTypeFilter]);
 
+  // Compute selected price point (month-specific or year-average) from telanganaPriceData
+  const selectedPricePoint = useMemo(() => {
+    if (!yearFilter || yearFilter === "All Years") return null;
+    const dataArr = telanganaPriceData[yearTypeFilter] || [];
+    const yearObj = dataArr.find(y => y.year === yearFilter);
+    if (!yearObj) return null;
+    const monthsData = yearObj.data || [];
+    const avg = (arr, key) => {
+      const vals = arr.map(d => d[key]).filter(v => typeof v === 'number');
+      if (!vals.length) return null;
+      return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+    };
+
+    if (monthFilter && monthFilter !== 'All Months') {
+      const monthObj = monthsData.find(m => m.month === monthFilter);
+      if (!monthObj) return null;
+      return { ffb: monthObj.ffb, cpo: monthObj.cpo, label: `${monthFilter} ${yearFilter}` };
+    }
+
+    return { ffb: avg(monthsData, 'ffb'), cpo: avg(monthsData, 'cpo'), label: `${yearFilter} (avg)` };
+  }, [yearFilter, monthFilter, yearTypeFilter]);
+
+  // Compute price cards data (respecting filters). Prefer selectedPricePoint (telangana proxy),
+  // otherwise aggregate from filteredData.priceData so Year="All Years" still shows values.
+  const priceCards = useMemo(() => {
+    if (selectedPricePoint) return selectedPricePoint;
+    if (!filteredData || !filteredData.priceData) return null;
+    const entries = filteredData.priceData.flatMap(yd => (
+      (yd.data || []).filter(m => monthFilter === 'All Months' || m.month === monthFilter)
+        .map(m => ({ ffb: m.ffb, cpo: m.cpo }))
+    ));
+    if (!entries.length) return null;
+    const avg = (arr, key) => {
+      const vals = arr.map(d => d[key]).filter(v => typeof v === 'number');
+      if (!vals.length) return null;
+      return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+    };
+    return { ffb: avg(entries, 'ffb'), cpo: avg(entries, 'cpo'), label: yearFilter === 'All Years' ? 'Selected' : `${yearFilter} (avg)` };
+  }, [filteredData, selectedPricePoint, monthFilter, yearFilter]);
+
   // Get year options based on year type
   const yearOptions = yearTypeFilter === "financialYear" 
     ? ["All Years", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
@@ -78,7 +118,7 @@ export default function ImpactDashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-[#003366]">Mission Alignment Tracker</h2>
+                <h2 className="text-2xl font-bold text-[#003366]">NMEO-OP Alignment Tracker</h2>
                 <div className="bg-[#003366] text-white px-3 py-1 rounded text-sm font-medium">
                   <span>OFFICIAL MONITORING</span>
                 </div>
@@ -100,6 +140,43 @@ export default function ImpactDashboard() {
                   <span className="text-gray-600">Ministry of Agriculture</span>
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* News Cards: Price snapshots that respond to Year/Month filters */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500">Price Snapshot</div>
+                  <div className="text-sm text-gray-600">FFB (Fresh Fruit Bunches)</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-green-700">
+                    {selectedPricePoint && selectedPricePoint.ffb ? `₹${selectedPricePoint.ffb.toLocaleString()}` : '—'}
+                  </div>
+                  <div className="text-xs text-gray-500">{selectedPricePoint ? selectedPricePoint.label : 'Select year/month'}</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-gray-600">Source: Telangana data (used as proxy for all states)</div>
+            </div>
+
+            <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500">Price Snapshot</div>
+                  <div className="text-sm text-gray-600">CPO (Crude Palm Oil)</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-yellow-700">
+                    {selectedPricePoint && selectedPricePoint.cpo ? `₹${selectedPricePoint.cpo.toLocaleString()}` : '—'}
+                  </div>
+                  <div className="text-xs text-gray-500">{selectedPricePoint ? selectedPricePoint.label : 'Select year/month'}</div>
+                </div>
+              </div>
+              <div className="mt-3 text-xs text-gray-600">Source: Telangana data (used as proxy for all states)</div>
             </div>
           </div>
         </div>
@@ -205,7 +282,7 @@ export default function ImpactDashboard() {
         </div>
         
         <div className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="text-2xl font-bold text-blue-700">{filteredData.stateInfo.coveragePercentage}%</div>
                 <div className="text-sm text-blue-600 mt-1">Potential Area Covered</div>
@@ -232,6 +309,22 @@ export default function ImpactDashboard() {
                   {yearPriceSummary && yearPriceSummary.avgCPO ? `₹${yearPriceSummary.avgCPO.toLocaleString()}` : (filteredData.stateInfo.currentCPOPrice ? `₹${filteredData.stateInfo.currentCPOPrice}` : '—')}
                 </div>
                 <div className="text-sm text-yellow-600 mt-1">Avg CPO (₹/MT)</div>
+              </div>
+              {/* FFB & CPO cards (respect filters) - placed adjacent to Avg CPO */}
+              <div className="text-center p-4 bg-green-50/60 rounded-lg border border-green-200">
+                <div className="text-2xl font-bold text-green-700">
+                  {priceCards && priceCards.ffb ? `₹${priceCards.ffb.toLocaleString()}` : '—'}
+                </div>
+                <div className="text-sm text-green-600 mt-1">FFB Price (₹/MT)</div>
+                <div className="text-xs text-gray-500 mt-1">{priceCards ? priceCards.label : ''}</div>
+              </div>
+
+              <div className="text-center p-4 bg-yellow-50/60 rounded-lg border border-yellow-200">
+                <div className="text-2xl font-bold text-yellow-700">
+                  {priceCards && priceCards.cpo ? `₹${priceCards.cpo.toLocaleString()}` : '—'}
+                </div>
+                <div className="text-sm text-yellow-600 mt-1">CPO Price (₹/MT)</div>
+                <div className="text-xs text-gray-500 mt-1">{priceCards ? priceCards.label : ''}</div>
               </div>
             </div>
           </div>
@@ -289,55 +382,7 @@ export default function ImpactDashboard() {
         </div>
       </div>
 
-      {/* Filtered Price Data Display - Plain Header */}
-      {filteredData.priceData.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-          <div className="border-b border-gray-200 bg-gray-50 p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-8 bg-purple-500 rounded"></div>
-                <h3 className="text-lg font-bold text-gray-800">
-                  Price Data - {stateFilter} ({yearTypeFilter})
-                </h3>
-              </div>
-              <div className="text-sm text-gray-600">
-                {yearFilter} • {monthFilter}
-              </div>
-            </div>
-          </div>
-          
-          <div className="p-6">
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left font-bold text-gray-700 border-b border-gray-300">Year</th>
-                    <th className="px-4 py-3 text-left font-bold text-gray-700 border-b border-gray-300">Month</th>
-                    <th className="px-4 py-3 text-right font-bold text-gray-700 border-b border-gray-300">FFB Price (₹/MT)</th>
-                    <th className="px-4 py-3 text-right font-bold text-gray-700 border-b border-gray-300">CPO Price (₹/MT)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredData.priceData.flatMap(yearData =>
-                    yearData.data.map(monthData => (
-                      <tr key={`${yearData.year}-${monthData.month}`} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium">{yearData.year}</td>
-                        <td className="px-4 py-3">{monthData.month}</td>
-                        <td className="px-4 py-3 text-right font-bold">
-                          ₹{monthData.ffb?.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold">
-                          ₹{monthData.cpo?.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Filtered price table replaced by compact price cards (see State Overview) */}
 
       {/* Mission Health Dashboard - Blue Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
