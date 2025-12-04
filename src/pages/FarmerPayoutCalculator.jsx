@@ -660,6 +660,155 @@ palm nuts</div>
                       </div>
                     </div>
                   </div>
+                  
+{apiResult?.payout_breakdown && (
+  <div className="mt-8">
+    <h3 className="text-lg font-semibold text-gray-800 mb-4">Detailed Price Calculation Breakdown</h3>
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">S. No.</th>
+            <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">Details</th>
+            <th className="py-3 px-4 text-left text-sm font-medium text-gray-700 border-b">Amount (in ₹)</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {/* Row 1: Net CPO Price */}
+          <tr className="hover:bg-gray-50">
+            <td className="py-3 px-4 text-sm text-gray-600">1</td>
+            <td className="py-3 px-4 text-sm text-gray-800">
+              Net CPO price per MT for the month of {monthName}, {year}
+            </td>
+            <td className="py-3 px-4 text-sm font-medium text-gray-900">
+              {apiResult.spot_price.toFixed(2)}
+            </td>
+          </tr>
+          
+          {/* Row 2: 14.61% of Net CPO Price */}
+          <tr className="hover:bg-gray-50">
+            <td className="py-3 px-4 text-sm text-gray-600">2</td>
+            <td className="py-3 px-4 text-sm text-gray-800">
+              14.61% of Net CPO price
+            </td>
+            <td className="py-3 px-4 text-sm font-medium text-gray-900">
+              {apiResult.payout_breakdown.FP_Industry ? (apiResult.spot_price * 0.1461).toFixed(2) : '0.00'}
+            </td>
+          </tr>
+          
+          {/* Row 3: Weighted Average Price of Palm Nuts */}
+          {apiResult.payout_breakdown["Weighted Average price of palm nuts per MT"] && (
+            <tr className="hover:bg-gray-50">
+              <td className="py-3 px-4 text-sm text-gray-600">3</td>
+              <td className="py-3 px-4 text-sm text-gray-800">
+                Weighted average price of palm nuts per MT
+              </td>
+              <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                {apiResult.payout_breakdown["Weighted Average price of palm nuts per MT"].toFixed(2)}
+              </td>
+            </tr>
+          )}
+          
+          {/* Row 4: 10.15% of Weighted Average Price */}
+          {apiResult.payout_breakdown["10.15 percent of Weighted average price of palm nuts"] && (
+            <tr className="hover:bg-gray-50">
+              <td className="py-3 px-4 text-sm text-gray-600">4</td>
+              <td className="py-3 px-4 text-sm text-gray-800">
+                10.15% of Weighted average price of palm nuts
+              </td>
+              <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                {apiResult.payout_breakdown["10.15 percent of Weighted average price of palm nuts"].toFixed(2)}
+              </td>
+            </tr>
+          )}
+          
+          {/* Row 5: 75.25% on 10.15% */}
+          {apiResult.payout_breakdown["75.25 percent on 10.15 percent of Weighted average price of palm nuts"] && (
+            <tr className="hover:bg-gray-50">
+              <td className="py-3 px-4 text-sm text-gray-600">5</td>
+              <td className="py-3 px-4 text-sm text-gray-800">
+                75.25% on 10.15% of Weighted average price of palm nuts
+              </td>
+              <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                {apiResult.payout_breakdown["75.25 percent on 10.15 percent of Weighted average price of palm nuts"].toFixed(2)}
+              </td>
+            </tr>
+          )}
+          
+          {/* Row 6: Total Formula Price Calculation */}
+          <tr className="bg-blue-50">
+            <td className="py-3 px-4 text-sm font-medium text-blue-800">6</td>
+            <td className="py-3 px-4 text-sm font-medium text-blue-800">
+              Formula Price (Industry Pays)
+            </td>
+            <td className="py-3 px-4 text-sm font-bold text-blue-900">
+              ₹{apiResult.payout_breakdown.FP_Industry.toFixed(2)}
+            </td>
+          </tr>
+          
+          {/* Row 7: VP Target Price */}
+          <tr className="bg-green-50">
+            <td className="py-3 px-4 text-sm font-medium text-green-800">7</td>
+            <td className="py-3 px-4 text-sm font-medium text-green-800">
+              VP Target Price (per MT FFB)
+            </td>
+            <td className="py-3 px-4 text-sm font-bold text-green-900">
+              ₹{apiResult.payout_breakdown.VP_Target.toFixed(2)}
+            </td>
+          </tr>
+          
+          {/* Row 8: Viability Gap Payment */}
+          <tr className={`${apiResult.payout_breakdown.VGP_Govt > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}>
+            <td className={`py-3 px-4 text-sm font-medium ${apiResult.payout_breakdown.VGP_Govt > 0 ? 'text-amber-800' : 'text-gray-800'}`}>
+              8
+            </td>
+            <td className={`py-3 px-4 text-sm font-medium ${apiResult.payout_breakdown.VGP_Govt > 0 ? 'text-amber-800' : 'text-gray-800'}`}>
+              Viability Gap Payment (VGP) Required
+            </td>
+            <td className={`py-3 px-4 text-sm font-bold ${apiResult.payout_breakdown.VGP_Govt > 0 ? 'text-amber-900' : 'text-gray-900'}`}>
+              ₹{apiResult.payout_breakdown.VGP_Govt.toFixed(2)}
+            </td>
+          </tr>
+          
+          {/* Row 9: Total Farmer Receives */}
+          <tr className="bg-gradient-to-r from-green-50 to-emerald-50 border-t-2 border-green-200">
+            <td className="py-4 px-4 text-lg font-bold text-green-900"></td>
+            <td className="py-4 px-4 text-lg font-bold text-green-900">
+              Total Farmer Receives (per MT FFB)
+            </td>
+            <td className="py-4 px-4 text-2xl font-bold text-green-900">
+              ₹{apiResult.payout_breakdown.Total_Farmer_Price.toFixed(2)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    {/* Summary Card */}
+    <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+        <div className="text-sm text-blue-600 mb-1">Formula Calculation</div>
+        <div className="text-lg font-bold text-blue-800">
+          14.61% of CPO + 75.25% of (10.15% of Palm Nuts)
+        </div>
+      </div>
+      
+      <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+        <div className="text-sm text-green-600 mb-1">VP Target Formula</div>
+        <div className="text-lg font-bold text-green-800">
+          14.61% of (VP Base CPO × WPI Factor)
+        </div>
+      </div>
+      
+      <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+        <div className="text-sm text-amber-600 mb-1">VGP Formula</div>
+        <div className="text-lg font-bold text-amber-800">
+          VP Target − Formula Price
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
                   {/* Additional Calculations */}
                   <div>

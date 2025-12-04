@@ -318,9 +318,9 @@ export default function ScenarioBuilder() {
     // API Risk Flag Analysis
     if (simulationResults.riskFlag) {
       if (simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")) {
-        lines.push("⚠️ WARNING: Landed cost is low. Farmer viability gap is high. Consider raising duty.");
+        lines.push("WARNING: Landed cost is low. Farmer viability gap is high. Consider raising duty.");
       } else if (simulationResults.riskFlag.includes("Safe") || simulationResults.riskFlag.includes("High")) {
-        lines.push("✅ Market Status: Landed cost supports farmer prices naturally.");
+        lines.push("Market Status: Landed cost supports farmer prices naturally.");
       }
     }
 
