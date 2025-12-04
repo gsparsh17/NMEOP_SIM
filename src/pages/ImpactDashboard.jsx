@@ -26,7 +26,7 @@ export default function ImpactDashboard() {
   const [stateFilter, setStateFilter] = useState("All-India");
   const [yearTypeFilter, setYearTypeFilter] = useState("financialYear");
   const [yearFilter, setYearFilter] = useState("2024-25");
-  const [monthFilter, setMonthFilter] = useState("All Months");
+  const [monthFilter, setMonthFilter] = useState(MONTHS[11]);
   const [region, setRegion] = useState("National");
 
   // Get filtered data based on current filters
@@ -36,7 +36,7 @@ export default function ImpactDashboard() {
        ["Nov-Oct 2019-20", "Nov-Oct 2020-21", "Nov-Oct 2021-22", "Nov-Oct 2022-23", "Nov-Oct 2023-24"]) 
       : [yearFilter];
     
-    const selectedMonths = monthFilter === "All Months" ? MONTHS : [monthFilter];
+    const selectedMonths = [monthFilter];
 
     return {
       priceData: getPriceData(stateFilter, yearTypeFilter, selectedYears, selectedMonths),
@@ -78,10 +78,9 @@ export default function ImpactDashboard() {
       return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
     };
 
-    if (monthFilter && monthFilter !== 'All Months') {
+    if (monthFilter) {
       const monthObj = monthsData.find(m => m.month === monthFilter);
-      if (!monthObj) return null;
-      return { ffb: monthObj.ffb, cpo: monthObj.cpo, label: `${monthFilter} ${yearFilter}` };
+      if (monthObj) return { ffb: monthObj.ffb, cpo: monthObj.cpo, label: `${monthFilter} ${yearFilter}` };
     }
 
     return { ffb: avg(monthsData, 'ffb'), cpo: avg(monthsData, 'cpo'), label: `${yearFilter} (avg)` };
@@ -93,7 +92,7 @@ export default function ImpactDashboard() {
     if (selectedPricePoint) return selectedPricePoint;
     if (!filteredData || !filteredData.priceData) return null;
     const entries = filteredData.priceData.flatMap(yd => (
-      (yd.data || []).filter(m => monthFilter === 'All Months' || m.month === monthFilter)
+      (yd.data || []).filter(m => m.month === monthFilter)
         .map(m => ({ ffb: m.ffb, cpo: m.cpo }))
     ));
     if (!entries.length) return null;
@@ -107,8 +106,8 @@ export default function ImpactDashboard() {
 
   // Get year options based on year type
   const yearOptions = yearTypeFilter === "financialYear" 
-    ? ["All Years", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
-    : ["All Years", "Nov-Oct 2019-20", "Nov-Oct 2020-21", "Nov-Oct 2021-22", "Nov-Oct 2022-23", "Nov-Oct 2023-24", "Nov-Oct 2024-25"];
+    ? ["2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
+    : ["Nov-Oct 2019-20", "Nov-Oct 2020-21", "Nov-Oct 2021-22", "Nov-Oct 2022-23", "Nov-Oct 2023-24", "Nov-Oct 2024-25"];
 
   return (
     <div className="max-w-7xl mx-auto p-4">
@@ -193,7 +192,7 @@ export default function ImpactDashboard() {
           </div>
         </div>
         
-        <div className="p-6">
+        {/* <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <MissionProgress 
               title="Area Expansion"
@@ -220,7 +219,7 @@ export default function ImpactDashboard() {
               description={missionAlignmentData.clusterHealth.description}
             />
           </div>
-        </div>
+        </div> */}
       </div>
 
        {/* Enhanced Filters - Plain Header */}
@@ -250,7 +249,7 @@ export default function ImpactDashboard() {
               label="Month"
               value={monthFilter}
               onChange={setMonthFilter}
-              options={["All Months", ...MONTHS]}
+              options={MONTHS}
             />
               {/* <button className="bg-[#003366] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#164523] transition-colors flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
