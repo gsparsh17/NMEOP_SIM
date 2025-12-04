@@ -238,14 +238,14 @@ export const stateWiseData = {
   "Andhra Pradesh": {
     potentialArea: 531379,
     areaCovered: 185000,
-    coveragePercentage: 35,
+    coveragePercentage: 34.8, // (185000/531379)*100 = 34.8%
     areaExpansionTargets: [15000, 20000, 24000, 25000, 28000],
     totalExpansionTarget: 112000,
-    currentFFBPrice: 19681,
-    currentCPOPrice: 116159,
+    currentFFBPrice: 17951, // August 2021 price
+    currentCPOPrice: 116159, // August 2021 price
     OER: 16.26,
     processingMills: 19,
-    crushingCapacity: 240,
+    crushingCapacity: 240, // MT/hour
     productionData: {
       "2014-15": { ffb: 1007553, cpo: 170478 },
       "2015-16": { ffb: 1147780, cpo: 193562 },
@@ -254,6 +254,10 @@ export const stateWiseData = {
       "2018-19": { ffb: 1379215, cpo: 232938 },
       "2019-20": { ffb: 1277760, cpo: 208359 },
       "2020-21": { ffb: 1471521, cpo: 237900 }
+    },
+    districts: ["East Godavari", "Krishna", "Nellore", "Srikakulam", "Vishakpatnam", "Vizianagaram", "West Godavari"],
+    financialData: {
+      "2021-22": { allocation: 4886.95, release: 1331.00 } // in lakhs
     }
   },
   "Telangana": {
@@ -262,11 +266,11 @@ export const stateWiseData = {
     coveragePercentage: 4.90,
     areaExpansionTargets: [19000, 22000, 25000, 29300, 30000],
     totalExpansionTarget: 125300,
-    currentFFBPrice: 19681,
-    currentCPOPrice: 115715,
+    currentFFBPrice: 15923, // March 2021 price
+    currentCPOPrice: 115715, // October 2025 price from your data
     OER: 18.04,
     processingMills: 2,
-    crushingCapacity: 60,
+    crushingCapacity: 60, // MT/hour (30 TPH each)
     productionData: {
       "2014-15": { ffb: 57873, cpo: 10012 },
       "2015-16": { ffb: 75447, cpo: 12499 },
@@ -275,6 +279,10 @@ export const stateWiseData = {
       "2018-19": { ffb: 197632, cpo: 37205 },
       "2019-20": { ffb: 208826, cpo: 38050 },
       "2020-21": { ffb: 149488, cpo: 26690 }
+    },
+    districts: ["Khammam", "Kothagudem", "Nalgonda", "Suryapet"],
+    financialData: {
+      "2021-22": { allocation: 3616.50, release: 700.73 } // in lakhs
     }
   },
   "Tamil Nadu": {
@@ -283,10 +291,11 @@ export const stateWiseData = {
     coveragePercentage: 34.46,
     areaExpansionTargets: [1500, 2000, 5000, 5000, 5000],
     totalExpansionTarget: 18500,
-    currentFFBPrice: 19681,
+    currentFFBPrice: 8126, // August 2020 price
+    currentCPOPrice: null, // Not mentioned in document
     OER: 14.29,
     processingMills: 1,
-    crushingCapacity: 2.5,
+    crushingCapacity: 2.5, // MT/hour
     productionData: {
       "2014-15": { ffb: 6568, cpo: 1019 },
       "2015-16": { ffb: 7810, cpo: 1222 },
@@ -295,16 +304,23 @@ export const stateWiseData = {
       "2018-19": { ffb: 7014, cpo: 1017 },
       "2019-20": { ffb: 3798, cpo: 553 },
       "2020-21": { ffb: 3038, cpo: 429 }
+    },
+    districts: ["Ariyalur", "Cuddalore", "Erode", "Karur", "Perambalur", "Pudukkottai", "Tiruvarur", "Tiruchirapalli", "Thirrupur", "Tiruvelveli", "Villupuram", "Thanjavur", "Nagapattinam", "Theni", "Dingigul", "Coimbatore", "Salem", "Nammakal", "Vellore", "Thirupathur", "Ranipet", "Kanjipuram", "Chengalpattu", "Thiruvallur", "Thiruvannamalai", "Dhamapuri", "Krishnagiri"],
+    financialData: {
+      "2021-22": { allocation: 278.70, release: 41.39 } // in lakhs
     }
   },
   "Odisha": {
     potentialArea: 34291,
     areaCovered: 23130,
-    coveragePercentage: 67,
+    coveragePercentage: 67.45, // (23130/34291)*100 = 67.45%
     areaExpansionTargets: [1500, 2000, 2000, 2500, 2500],
     totalExpansionTarget: 10500,
-    currentFFBPrice: 19681,
-    processingMills: 1,
+    currentFFBPrice: 17636, // April 2021 price
+    currentCPOPrice: null, // Not mentioned in document
+    OER: null,
+    processingMills: 0, // No operational mills mentioned
+    crushingCapacity: null,
     productionData: {
       "2014-15": { ffb: 3769, cpo: 557 },
       "2015-16": { ffb: 4569, cpo: 618 },
@@ -313,19 +329,23 @@ export const stateWiseData = {
       "2018-19": { ffb: 6899, cpo: null },
       "2019-20": { ffb: 7106, cpo: null },
       "2020-21": { ffb: null, cpo: null }
+    },
+    districts: ["Baragarh", "Gajapathi", "Ganjam", "Mayurbhanj", "Bhadrak", "Balasore", "Dhenkanal", "Cuttack", "Jaipur", "Nowarangapur", "Koraput", "Rayagarha", "Nayagarh", "Boudh", "Sonepur"],
+    financialData: {
+      "2021-22": { allocation: 239.77, release: 0 } // in lakhs
     }
   },
   "Karnataka": {
     potentialArea: 72642,
     areaCovered: 46954,
-    coveragePercentage: 65,
+    coveragePercentage: 64.64, // (46954/72642)*100 = 64.64%
     areaExpansionTargets: [2000, 3300, 4000, 5000, 5000],
     totalExpansionTarget: 19300,
-    currentFFBPrice: 19681,
-    currentCPOPrice: 110191,
-    OER: 17,
+    currentFFBPrice: 15306, // March 2020 price
+    currentCPOPrice: 110191, // March 2020 price
+    OER: 0.17, // Document says 0.17% (likely typo, should be ~17%)
     processingMills: 4,
-    crushingCapacity: 21,
+    crushingCapacity: 21, // MT/hour
     productionData: {
       "2014-15": { ffb: 12638, cpo: 2176 },
       "2015-16": { ffb: 14740, cpo: 2538 },
@@ -334,6 +354,111 @@ export const stateWiseData = {
       "2018-19": { ffb: 13238, cpo: 2280 },
       "2019-20": { ffb: 12685, cpo: 2184 },
       "2020-21": { ffb: 15877, cpo: 2734 }
+    },
+    districts: ["Mysore", "Mandya", "Chamarajnagar", "Hassan", "Kodagu", "Dakshina Kannada", "Shimoga", "Chickmaglur", "Udupi", "Davangere", "Haveri", "Bellary", "Koppal", "Raichur", "Gadag", "Belgaum", "Uttar Kannada", "Dharwad", "Bijapur", "Bagalkot", "Yadgiri", "Gulbarga", "Bidar"],
+    financialData: {
+      "2021-22": { allocation: 745.66, release: 105.17 } // in lakhs
+    }
+  },
+  // Add missing states from the document
+  "Chhattisgarh": {
+    potentialArea: 57150,
+    areaCovered: 5542,
+    coveragePercentage: 9.70, // (5542/57150)*100 = 9.70%
+    areaExpansionTargets: [500, 1500, 4300, 5000, 5100],
+    totalExpansionTarget: 16400,
+    currentFFBPrice: 7626, // January 2021 price
+    currentCPOPrice: null, // No production mentioned
+    OER: null,
+    processingMills: 0,
+    crushingCapacity: null,
+    productionData: {
+      "2014-15": { ffb: 0, cpo: 0 },
+      "2015-16": { ffb: 0, cpo: 0 },
+      "2016-17": { ffb: 18, cpo: 0 },
+      "2017-18": { ffb: 5, cpo: 0 },
+      "2018-19": { ffb: 6, cpo: 0 },
+      "2019-20": { ffb: 279, cpo: 0 },
+      "2020-21": { ffb: 6, cpo: null }
+    },
+    districts: ["Jagdalpur", "Sukma", "Dantewada", "Mahasamund", "Gariyaband", "Kanker", "Bilaspur", "Korba", "Mungeli", "Gorella-penda Marwahi", "Baloda Bazar", "Raigarh", "Janjgir-Champa", "Balod", "Bemetara", "Durg"],
+    financialData: {
+      "2021-22": { allocation: 182.69, release: 0 } // in lakhs
+    }
+  },
+  "Gujarat": {
+    potentialArea: 62361,
+    areaCovered: 6215,
+    coveragePercentage: 9.96,
+    areaExpansionTargets: [500, 1000, 3000, 4000, 4200],
+    totalExpansionTarget: 12700,
+    currentFFBPrice: 11900, // August 2021 price
+    currentCPOPrice: null, // No CPO production mentioned
+    OER: null,
+    processingMills: 1, // Non-operational
+    crushingCapacity: 2.5, // MT/hour
+    productionData: {
+      "2014-15": { ffb: 409, cpo: 0 },
+      "2015-16": { ffb: 523, cpo: 0 },
+      "2016-17": { ffb: 775, cpo: 0 },
+      "2017-18": { ffb: 996, cpo: 0 },
+      "2018-19": { ffb: 1053, cpo: 0 },
+      "2019-20": { ffb: 745, cpo: 0 },
+      "2020-21": { ffb: 7425, cpo: null }
+    },
+    districts: ["Anand", "Navsari", "Kheda", "Panchmahal", "Valsad", "Bharuch", "Narmada", "Vadodara", "Chota Udepur", "Mahi Sagar"],
+    financialData: {
+      "2021-22": { allocation: 178.72, release: 0 } // in lakhs
+    }
+  },
+  "Goa": {
+    potentialArea: 2000,
+    areaCovered: 970,
+    coveragePercentage: 48.50, // (970/2000)*100 = 48.50%
+    areaExpansionTargets: [20, 180, 200, 200, 200],
+    totalExpansionTarget: 800,
+    currentFFBPrice: null, // Not mentioned
+    currentCPOPrice: null, // Not mentioned
+    OER: null, // Not mentioned
+    processingMills: 1,
+    crushingCapacity: 2.5, // MT/hour
+    productionData: {
+      "2014-15": { ffb: 2146, cpo: 369 },
+      "2015-16": { ffb: 3217, cpo: 579 },
+      "2016-17": { ffb: 2429, cpo: 437 },
+      "2017-18": { ffb: 2108, cpo: 380 },
+      "2018-19": { ffb: 2281, cpo: 411 },
+      "2019-20": { ffb: 1716, cpo: 309 },
+      "2020-21": { ffb: 1717, cpo: 305 }
+    },
+    districts: ["North Goa", "South Goa"],
+    financialData: {
+      "2021-22": { allocation: 6.01, release: 0 } // in lakhs
+    }
+  },
+  "Kerala": {
+    potentialArea: 43676,
+    areaCovered: 5794,
+    coveragePercentage: 13.27, // (5794/43676)*100 = 13.27%
+    areaExpansionTargets: [0, 1000, 1500, 2000, 2000],
+    totalExpansionTarget: 6500,
+    currentFFBPrice: 9000, // March 2021 price
+    currentCPOPrice: 104823, // March 2021 price
+    OER: 15.69,
+    processingMills: 1,
+    crushingCapacity: 20, // MT/hour
+    productionData: {
+      "2014-15": { ffb: 40798, cpo: 6515 },
+      "2015-16": { ffb: 40611, cpo: 7015 },
+      "2016-17": { ffb: 34198, cpo: 5929 },
+      "2017-18": { ffb: 30220, cpo: 5191 },
+      "2018-19": { ffb: 30269, cpo: 4609 },
+      "2019-20": { ffb: 27201, cpo: 4824 },
+      "2020-21": { ffb: 27627, cpo: 4281 }
+    },
+    districts: ["Trivandrum", "Kollam", "Pathanamthitta", "Alapuzha", "Kottayam", "Ernakulam", "Malappuram", "Kozhikode", "Wayanadu", "Kasagode", "Palakkad", "Kannur", "Idukki"],
+    financialData: {
+      "2021-22": { allocation: 82.60, release: 0 } // in lakhs
     }
   }
 };
@@ -342,13 +467,71 @@ export const stateWiseData = {
 const allIndiaPotential = Object.values(stateWiseData).reduce((sum, state) => sum + state.potentialArea, 0);
 const allIndiaCovered = Object.values(stateWiseData).reduce((sum, state) => sum + state.areaCovered, 0);
 const allIndiaExpansionTarget = Object.values(stateWiseData).reduce((sum, state) => sum + state.totalExpansionTarget, 0);
+const allIndiaProcessingMills = Object.values(stateWiseData).reduce((sum, state) => sum + (state.processingMills || 0), 0);
+const allIndiaCrushingCapacity = Object.values(stateWiseData).reduce((sum, state) => sum + (state.crushingCapacity || 0), 0);
+
+// Calculate total production for recent years
+const calculateTotalProduction = (year) => {
+  let totalFFB = 0;
+  let totalCPO = 0;
+  Object.values(stateWiseData).forEach(state => {
+    if (state.productionData && state.productionData[year]) {
+      totalFFB += state.productionData[year].ffb || 0;
+      totalCPO += state.productionData[year].cpo || 0;
+    }
+  });
+  return { ffb: totalFFB, cpo: totalCPO };
+};
 
 stateWiseData["All-India"] = {
   potentialArea: allIndiaPotential,
   areaCovered: allIndiaCovered,
-  coveragePercentage: (allIndiaCovered / allIndiaPotential * 100).toFixed(1),
-  areaExpansionTargets: [38320, 31980, 43200, 52000, 53000],
-  totalExpansionTarget: allIndiaExpansionTarget
+  coveragePercentage: parseFloat(((allIndiaCovered / allIndiaPotential) * 100).toFixed(2)),
+  areaExpansionTargets: [
+    Object.values(stateWiseData).reduce((sum, state) => sum + state.areaExpansionTargets[0], 0),
+    Object.values(stateWiseData).reduce((sum, state) => sum + state.areaExpansionTargets[1], 0),
+    Object.values(stateWiseData).reduce((sum, state) => sum + state.areaExpansionTargets[2], 0),
+    Object.values(stateWiseData).reduce((sum, state) => sum + state.areaExpansionTargets[3], 0),
+    Object.values(stateWiseData).reduce((sum, state) => sum + state.areaExpansionTargets[4], 0)
+  ],
+  totalExpansionTarget: allIndiaExpansionTarget,
+  processingMills: allIndiaProcessingMills,
+  crushingCapacity: allIndiaCrushingCapacity,
+  currentFFBPrice: 19681, // Average or representative price
+  productionData: {
+    "2014-15": calculateTotalProduction("2014-15"),
+    "2015-16": calculateTotalProduction("2015-16"),
+    "2016-17": calculateTotalProduction("2016-17"),
+    "2017-18": calculateTotalProduction("2017-18"),
+    "2018-19": calculateTotalProduction("2018-19"),
+    "2019-20": calculateTotalProduction("2019-20"),
+    "2020-21": calculateTotalProduction("2020-21")
+  },
+  financialData: {
+    "2021-22": {
+      allocation: Object.values(stateWiseData).reduce((sum, state) => 
+        sum + (state.financialData?.["2021-22"]?.allocation || 0), 0
+      ),
+      release: Object.values(stateWiseData).reduce((sum, state) => 
+        sum + (state.financialData?.["2021-22"]?.release || 0), 0
+      )
+    }
+  }
+};
+
+// Add summary statistics
+export const oilPalmSummary = {
+  totalStates: Object.keys(stateWiseData).length - 1, // Excluding All-India
+  totalDistricts: Object.values(stateWiseData).reduce((sum, state) => {
+    if (state.districts) return sum + state.districts.length;
+    return sum;
+  }, 0),
+  totalFarmers: 6471, // From Telangana's Bhadradri Kothagudem district example
+  topPerformingState: "Andhra Pradesh",
+  topPerformingDistrict: "Bhadradri Kothagudem (Telangana)",
+  bestOER: 18.04, // Telangana
+  averageCoverage: parseFloat(((allIndiaCovered / allIndiaPotential) * 100).toFixed(2)),
+  totalNMEOOPTarget: allIndiaExpansionTarget
 };
 
 // -------------------------------
@@ -546,14 +729,45 @@ export const diagnosticsDataQuality = [
   { series: "Weather Data (IMD)", completeness: 92, revisions: 4 },
 ];
 
+// data/staticData.js
 export const importsProdConsData = [
-  { year: 2015, imports: 8.3, production: 6.5, consumption: 14.0 },
-  { year: 2016, imports: 8.7, production: 6.8, consumption: 14.7 },
-  { year: 2017, imports: 9.1, production: 7.2, consumption: 15.4 },
-  { year: 2018, imports: 8.8, production: 7.5, consumption: 15.6 },
-  { year: 2019, imports: 9.3, production: 7.7, consumption: 16.2 },
-  { year: 2020, imports: 8.9, production: 8.0, consumption: 16.4 },
+  { year: 2015, imports: 8857, production: 219, consumption: 8997 },
+  { year: 2016, imports: 9341, production: 210, consumption: 9060 },
+  { year: 2017, imports: 8608, production: 271, consumption: 8750 },
+  { year: 2018, imports: 9710, production: 279, consumption: 9085 },
+  { year: 2019, imports: 7398, production: 255, consumption: 8450 },
+  { year: 2020, imports: 8411, production: 272, consumption: 9225 },
+  { year: 2021, imports: 8004, production: 291, consumption: 8150 },
+  { year: 2022, imports: 10045, production: 305, consumption: 8900 },
+  { year: 2023, imports: 8886, production: 305, consumption: 8990 },
+  { year: 2024, imports: 9400, production: 305, consumption: 10150 },
 ];
+
+// Optional: You can also create a function to format these values for display
+export const formatProductionValue = (value) => {
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(1)}K MT`;
+  }
+  return `${value} MT`;
+};
+
+export const formatImportValue = (value) => {
+  if (value >= 10000) {
+    return `${(value / 1000).toFixed(1)}K MT`;
+  }
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(2)}K MT`;
+  }
+  return `${value} MT`;
+};
+
+// You can also add a summary object
+export const importsProdConsSummary = {
+  averageImports: 8866, // Average from 2015-2024
+  averageProduction: 272, // Average from 2015-2024
+  averageConsumption: 8966, // Average from 2015-2024
+  dependencyRatio: 98.9, // (Avg Imports / Avg Consumption) * 100
+};
 
 export const diagnosticsModelPerf = [
   { model: "CPO Price Forecast", mape: 5.8, rmse: 8.4 },

@@ -1,3 +1,4 @@
+// Overview.jsx
 import React, { useState, useEffect } from "react";
 import {
   STATES,
@@ -22,9 +23,10 @@ import { getLiveMarketData, getAgriculturalWeatherAlerts, checkAPIStatus } from 
 import ImportsProdChart from "../components/charts/ImportsProdChart";
 import ImportShareDonut from "../components/charts/ImportShareDonut";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
+import PalmOilPriceChart from "../components/charts/PalmOilPriceChart"; // Import the new component
 import KpiCard from "../components/cards/KpiCard";
 
-// Updated fetch function with MYR to INR conversion
+// Update your fetch function to call the new endpoint
 const fetchPalmOilCommodityData = async () => {
   try {
     console.log("Fetching palm oil data from API...");
@@ -32,19 +34,17 @@ const fetchPalmOilCommodityData = async () => {
     
     if (!response.ok) {
       console.error(`API responded with status: ${response.status}`);
-      // Return fallback data with MYR to INR conversion
-      const fallbackPriceMYR = 4156.0;
-      const exchangeRate = 21.77;
+      // Return fallback data
       return {
         status: "success",
         data: {
           daily_price: {
-            price_myr: fallbackPriceMYR,
-            price_inr: fallbackPriceMYR * exchangeRate,
+            price_myr: 4156.0,
+            price_inr: 4156.0 * 21.77,
             change_myr: -4.0,
             change_percent: "-0.10%",
             currency: "MYR/T",
-            exchange_rate: exchangeRate,
+            exchange_rate: 21.77,
             unit: "metric ton",
             scraped_at: new Date().toISOString(),
             source: "https://tradingeconomics.com/commodity/palm-oil",
@@ -53,9 +53,9 @@ const fetchPalmOilCommodityData = async () => {
             note: "Fallback data"
           },
           graph_data: [],
-          graph_image: null,
+          summary_stats: {},
           timestamp: new Date().toISOString(),
-          exchange_rate: exchangeRate
+          exchange_rate: 21.77
         },
         note: "Using fallback data due to API error"
       };
@@ -66,19 +66,17 @@ const fetchPalmOilCommodityData = async () => {
     return data;
   } catch (error) {
     console.error('Error fetching palm oil data:', error);
-    // Return fallback data with MYR to INR conversion
-    const fallbackPriceMYR = 4156.0;
-    const exchangeRate = 21.77;
+    // Return fallback data
     return {
       status: "success",
       data: {
         daily_price: {
-          price_myr: fallbackPriceMYR,
-          price_inr: fallbackPriceMYR * exchangeRate,
+          price_myr: 4156.0,
+          price_inr: 4156.0 * 21.77,
           change_myr: -4.0,
           change_percent: "-0.10%",
           currency: "MYR/T",
-          exchange_rate: exchangeRate,
+          exchange_rate: 21.77,
           unit: "metric ton",
           scraped_at: new Date().toISOString(),
           source: "https://tradingeconomics.com/commodity/palm-oil",
@@ -87,9 +85,9 @@ const fetchPalmOilCommodityData = async () => {
           note: "Fallback data - network error"
         },
         graph_data: [],
-        graph_image: null,
+        summary_stats: {},
         timestamp: new Date().toISOString(),
-        exchange_rate: exchangeRate
+        exchange_rate: 21.77
       },
       note: "Using fallback data due to network error"
     };
@@ -131,6 +129,132 @@ const formatUSD = (amount) => {
   }).format(amount);
 };
 
+// Helper function to format date
+const formatMonthYear = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-IN', { 
+    month: 'long', 
+    year: 'numeric' 
+  });
+};
+
+// Helper function to format short date
+const formatShortDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-IN', { 
+    day: 'numeric',
+    month: 'short'
+  });
+};
+
+// Calculate percentage change
+const getPercentageChange = (current, previous) => {
+  if (!previous || previous === 0 || !current) return 0;
+  return ((current - previous) / previous) * 100;
+};
+
+// Format percentage change
+const formatPercentageChange = (percent) => {
+  if (percent > 0) return `+${percent.toFixed(2)}%`;
+  if (percent < 0) return `${percent.toFixed(2)}%`;
+  return '0.00%';
+};
+
+// Get change statement
+const getChangeStatement = (percent) => {
+  if (percent > 5) return 'Significant Increase';
+  if (percent > 2) return 'Moderate Increase';
+  if (percent > 0) return 'Slight Increase';
+  if (percent < -5) return 'Significant Decrease';
+  if (percent < -2) return 'Moderate Decrease';
+  if (percent < 0) return 'Slight Decrease';
+  return 'Stable';
+};
+
+// Get alert level based on percentage change
+const getAlertLevel = (percent) => {
+  if (percent > 5) {
+    return {
+      level: 'CRITICAL',
+      color: 'border-red-500',
+      dotColor: 'bg-red-500',
+      badgeColor: 'bg-red-100 text-red-800',
+      pulse: true
+    };
+  } else if (percent > 2) {
+    return {
+      level: 'HIGH',
+      color: 'border-orange-500',
+      dotColor: 'bg-orange-500',
+      badgeColor: 'bg-orange-100 text-orange-800',
+      pulse: false
+    };
+  } else if (percent > 0) {
+    return {
+      level: 'MODERATE',
+      color: 'border-amber-500',
+      dotColor: 'bg-amber-500',
+      badgeColor: 'bg-amber-100 text-amber-800',
+      pulse: false
+    };
+  } else if (percent < -2) {
+    return {
+      level: 'OPPORTUNITY',
+      color: 'border-green-500',
+      dotColor: 'bg-green-500',
+      badgeColor: 'bg-green-100 text-green-800',
+      pulse: false
+    };
+  } else {
+    return {
+      level: 'STABLE',
+      color: 'border-blue-500',
+      dotColor: 'bg-blue-500',
+      badgeColor: 'bg-blue-100 text-blue-800',
+      pulse: false
+    };
+  }
+};
+
+// Generate market statement based on price change
+const generateMarketStatement = (percentChange, currentPriceMYR, currentPriceINR) => {
+  const formatPrice = (price, currency = 'MYR') => {
+    if (!price) return 'N/A';
+    
+    switch (currency) {
+      case 'INR':
+        return formatINR(price);
+      case 'MYR':
+        return formatMYR(price);
+      case 'USD':
+      default:
+        return formatUSD(price);
+    }
+  };
+  
+  const formattedCurrentPrice = formatPrice(currentPriceMYR, 'MYR');
+  const formattedINRPrice = formatPrice(currentPriceINR, 'INR');
+  const changeFormatted = formatPercentageChange(percentChange);
+  
+  if (percentChange > 5) {
+    return `Global CPO prices surged ${changeFormatted} this month to ${formattedCurrentPrice} (${formattedINRPrice} in INR). Consider temporary duty adjustments to protect domestic consumers and review strategic reserve replenishment timing.`;
+  } else if (percentChange > 2) {
+    return `CPO prices increased ${changeFormatted} to ${formattedCurrentPrice}. Monitor import costs and review subsidy requirements for vulnerable consumer segments.`;
+  } else if (percentChange > 0) {
+    return `CPO prices edged up ${changeFormatted} to ${formattedCurrentPrice}. Market remains within stable range, continue monitoring global supply conditions.`;
+  } else if (percentChange < -5) {
+    return `CPO prices declined ${changeFormatted} to ${formattedCurrentPrice}. Opportunity to build strategic reserves at lower costs. Review import substitution strategy.`;
+  } else if (percentChange < -2) {
+    return `CPO prices decreased ${changeFormatted} to ${formattedCurrentPrice}. Favorable conditions for import cost reduction and consumer price relief.`;
+  } else if (percentChange < 0) {
+    return `CPO prices softened ${changeFormatted} to ${formattedCurrentPrice}. Mild downward pressure on import bills, maintain current policy settings.`;
+  } else {
+    return `CPO prices stable at ${formattedCurrentPrice}. Market equilibrium maintained, current policy settings appear appropriate.`;
+  }
+};
+
 export default function Overview() {
   const [selectedState, setSelectedState] = useState("All-India");
   const [timeRange, setTimeRange] = useState("2024-25");
@@ -142,13 +266,12 @@ export default function Overview() {
   const [palmOilData, setPalmOilData] = useState(null);
   const [palmOilLoading, setPalmOilLoading] = useState(false);
   const [graphData, setGraphData] = useState(null);
-const [showMonthlyTable, setShowMonthlyTable] = useState(false);
+  const [showMonthlyTable, setShowMonthlyTable] = useState(false);
 
   // Get current state data
   const currentStateData = stateWiseData[selectedState] || stateWiseData["All-India"];
 
   useEffect(() => {
-    // loadLiveData();
     checkAPIs();
     loadPalmOilData();
   }, []);
@@ -222,6 +345,139 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
     });
   };
 
+  // Render monthly data table
+  const renderMonthlyTable = () => {
+    if (!graphData || graphData.length === 0) return null;
+
+    const reversedData = [...graphData].reverse();
+
+    return (
+      <div className="max-h-96 overflow-y-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50 sticky top-0">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Month
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price (MYR)
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Price (INR)
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Month Change
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Change %
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {reversedData.map((monthData, index, array) => {
+              const prevMonth = array[index + 1];
+              const monthChange = prevMonth ? monthData.value_myr - prevMonth.value_myr : 0;
+              const changePercent = prevMonth ? 
+                ((monthData.value_myr - prevMonth.value_myr) / prevMonth.value_myr * 100) : 
+                0;
+              
+              return (
+                <tr key={monthData.date} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {new Date(monthData.date).toLocaleDateString('en-IN', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {new Date(monthData.date).toLocaleDateString('en-IN', { 
+                        day: '2-digit',
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-blue-800">
+                      {formatPrice(monthData.value_myr, 'MYR')}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-700">
+                      {formatPrice(monthData.value_inr, 'INR')}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      @ ₹{monthData.exchange_rate}/MYR
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`text-sm font-medium ${
+                      monthChange > 0 ? 'text-red-600' : 
+                      monthChange < 0 ? 'text-green-600' : 
+                      'text-gray-600'
+                    }`}>
+                      {monthChange > 0 ? '+' : ''}{formatPrice(monthChange, 'MYR')}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      changePercent > 0 ? 'bg-red-100 text-red-800' :
+                      changePercent < 0 ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {changePercent > 0 ? '↗' : changePercent < 0 ? '↘' : '→'}
+                      <span className="ml-1">
+                        {changePercent > 0 ? '+' : ''}{changePercent.toFixed(2)}%
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        
+        {/* Summary footer */}
+        <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-sm text-gray-600">
+              Showing {graphData.length} months of data • Exchange rate: 1 MYR = ₹{graphData[0]?.exchange_rate || 21.77}
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-sm">
+                <span className="text-gray-600">Highest:</span>
+                <span className="ml-2 font-medium text-red-600">
+                  {formatPrice(Math.max(...graphData.map(m => m.value_myr)), 'MYR')}
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-600">Lowest:</span>
+                <span className="ml-2 font-medium text-green-600">
+                  {formatPrice(Math.min(...graphData.map(m => m.value_myr)), 'MYR')}
+                </span>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-600">Average:</span>
+                <span className="ml-2 font-medium text-blue-600">
+                  {formatPrice(
+                    graphData.reduce((sum, m) => sum + m.value_myr, 0) / graphData.length, 
+                    'MYR'
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6">
       {/* Page Header */}
@@ -255,7 +511,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
         </div>
       </div>
 
-      {/* Palm Oil Commodity Data Section - UPDATED WITH MYR/INR */}
+      {/* Palm Oil Commodity Data Section */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
           <div className="flex items-center justify-between">
@@ -308,7 +564,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
             </div>
           ) : palmOilData ? (
             <>
-              {/* Currency Price Cards - UPDATED */}
+              {/* Currency Price Cards */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Malaysian Ringgit (MYR) Card */}
                 <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100">
@@ -372,218 +628,51 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
               </div>
 
               {/* Graph Data Section */}
-              {palmOilData.graph_image && (
-  <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h4 className="text-lg font-bold text-gray-800">1-Year Price Trend (MYR & INR)</h4>
-        <p className="text-sm text-gray-600">Historical price movement with currency conversion</p>
-      </div>
-      {graphData && graphData.length > 0 && (
-        <div className="text-right">
-          <div className="text-sm text-gray-600">Data points:</div>
-          <div className="text-lg font-bold text-[#003366]">{graphData.length}</div>
-        </div>
-      )}
-    </div>
-    <div className="flex justify-cente rounded-lg p-2">
-      <img 
-        src={`data:image/png;base64,${palmOilData.graph_image}`} 
-        alt="Palm Oil Price Chart"
-        className="max-w-full h-auto rounded-lg"
-      />
-    </div>
-    {graphData && graphData.length > 0 && (
-      <>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-blue-50 rounded-lg">
-            <div className="text-xs text-blue-600 font-medium">STARTING PRICE (MYR)</div>
-            <div className="text-xl font-bold text-blue-800">
-              {formatPrice(graphData[0]?.value_myr, 'MYR')}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {graphData[0]?.date ? new Date(graphData[0].date).toLocaleDateString('en-IN', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-              }) : 'N/A'}
-            </div>
-          </div>
-          <div className="text-center p-3 bg-green-50 rounded-lg">
-            <div className="text-xs text-green-600 font-medium">CURRENT PRICE (MYR)</div>
-            <div className="text-xl font-bold text-green-800">
-              {formatPrice(palmOilData.daily_price?.price_myr, 'MYR')}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {formatTimestamp(palmOilData.timestamp)}
-            </div>
-          </div>
-          <div className="text-center p-3 bg-purple-50 rounded-lg">
-            <div className="text-xs text-purple-600 font-medium">PERFORMANCE (MYR)</div>
-            <div className={`text-xl font-bold ${
-              palmOilData.daily_price?.price_myr > graphData[0]?.value_myr 
-                ? 'text-green-600' 
-                : 'text-red-600'
-            }`}>
-              {graphData.length > 0 && graphData[0]?.value_myr
-                ? `${((palmOilData.daily_price?.price_myr - graphData[0]?.value_myr) / graphData[0]?.value_myr * 100).toFixed(1)}%`
-                : 'N/A'
-              }
-            </div>
-            <div className="text-xs text-gray-500 mt-1">Since start of period</div>
-          </div>
-        </div>
-
-        {/* Dropdown for monthly data table */}
-        <div className="mt-6">
-          <button
-            onClick={() => setShowMonthlyTable(!showMonthlyTable)}
-            className="flex items-center justify-between w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span className="font-medium text-gray-800">View Monthly Data Table</span>
-              <span className="text-xs text-gray-500 ml-2">({graphData.length} months)</span>
-            </div>
-            <svg className={`w-5 h-5 text-gray-600 transition-transform ${showMonthlyTable ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {showMonthlyTable && (
-            <div className="mt-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Month
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price (MYR)
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price (INR)
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Month Change
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Change %
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {[...graphData].reverse().map((monthData, index, array) => {
-                      const prevMonth = array[index + 1];
-                      const monthChange = prevMonth ? monthData.value_myr - prevMonth.value_myr : 0;
-                      const changePercent = prevMonth ? 
-                        ((monthData.value_myr - prevMonth.value_myr) / prevMonth.value_myr * 100) : 
-                        0;
-                      
-                      return (
-                        <tr key={monthData.date} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {new Date(monthData.date).toLocaleDateString('en-IN', { 
-                                month: 'long', 
-                                year: 'numeric' 
-                              })}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">
-                              {new Date(monthData.date).toLocaleDateString('en-IN', { 
-                                day: '2-digit',
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-blue-800">
-                              {formatPrice(monthData.value_myr, 'MYR')}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-700">
-                              {formatPrice(monthData.value_inr, 'INR')}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              @ ₹{monthData.exchange_rate}/MYR
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`text-sm font-medium ${
-                              monthChange > 0 ? 'text-red-600' : 
-                              monthChange < 0 ? 'text-green-600' : 
-                              'text-gray-600'
-                            }`}>
-                              {monthChange > 0 ? '+' : ''}{formatPrice(monthChange, 'MYR')}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              changePercent > 0 ? 'bg-red-100 text-red-800' :
-                              changePercent < 0 ? 'bg-green-100 text-green-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {changePercent > 0 ? '↗' : changePercent < 0 ? '↘' : '→'}
-                              <span className="ml-1">
-                                {changePercent > 0 ? '+' : ''}{changePercent.toFixed(2)}%
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              
-              {/* Summary footer */}
-              <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-sm text-gray-600">
-                    Showing {graphData.length} months of data • Exchange rate: 1 MYR = ₹{graphData[0]?.exchange_rate || 21.77}
+              {palmOilData?.graph_data && palmOilData.graph_data.length > 0 && (
+                <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-800">1-Year Price Trend (MYR & INR)</h4>
+                      <p className="text-sm text-gray-600">Historical price movement with currency conversion</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-gray-600">Data points:</div>
+                      <div className="text-lg font-bold text-[#003366]">{palmOilData.graph_data.length}</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-sm">
-                      <span className="text-gray-600">Highest:</span>
-                      <span className="ml-2 font-medium text-red-600">
-                        {formatPrice(Math.max(...graphData.map(m => m.value_myr)), 'MYR')}
-                      </span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-600">Lowest:</span>
-                      <span className="ml-2 font-medium text-green-600">
-                        {formatPrice(Math.min(...graphData.map(m => m.value_myr)), 'MYR')}
-                      </span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-600">Average:</span>
-                      <span className="ml-2 font-medium text-blue-600">
-                        {formatPrice(
-                          graphData.reduce((sum, m) => sum + m.value_myr, 0) / graphData.length, 
-                          'MYR'
-                        )}
-                      </span>
-                    </div>
+                  
+                  {/* Use the new chart component */}
+                  <PalmOilPriceChart 
+                    graphData={palmOilData.graph_data}
+                    exchangeRate={palmOilData.daily_price?.exchange_rate || 21.77}
+                  />
+                  
+                  {/* Monthly data table dropdown */}
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setShowMonthlyTable(!showMonthlyTable)}
+                      className="flex items-center justify-between w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <span className="font-medium text-gray-800">View Monthly Data Table</span>
+                        <span className="text-xs text-gray-500 ml-2">({palmOilData.graph_data.length} months)</span>
+                      </div>
+                      <svg className={`w-5 h-5 text-gray-600 transition-transform ${showMonthlyTable ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {showMonthlyTable && (
+                      <div className="mt-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        {renderMonthlyTable()}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </>
-    )}
-  </div>
-)}
+              )}
 
               {/* Data Source Info */}
               <div className="mb-6 bg-white rounded-lg p-4 border border-gray-200">
@@ -621,7 +710,6 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
                   </div>
                 </div>
               </div>
-
             </>
           ) : (
             <div className="text-center py-12">
@@ -646,6 +734,162 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
         </div>
       </div>
 
+      {/* Alert Strips */}
+      <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">GLOBAL MARKET DATA STRIP</h3>
+                <p className="text-sm opacity-90">Monthly Price Trends & Percentage Changes</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs opacity-90">Data from Trading Economics</div>
+              <div className="text-xs opacity-75">Updated: {palmOilData?.timestamp ? formatTimestamp(palmOilData.timestamp) : 'N/A'}</div>
+            </div>
+          </div>
+        </div>
+
+        {palmOilLoading ? (
+          <div className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1e5c2a]"></div>
+              <span className="ml-3 text-gray-600">Loading market data...</span>
+            </div>
+          </div>
+        ) : palmOilData?.graph_data?.length > 0 ? (
+          <div className="p-6">
+            {/* Current Month Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="text-xs text-gray-600 font-medium mb-1">CURRENT MONTH</div>
+                <div className="text-lg font-bold text-[#003366]">
+                  {formatMonthYear(palmOilData.graph_data[palmOilData.graph_data.length - 1]?.date)}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Latest: {formatPrice(palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr, 'MYR')}
+                </div>
+              </div>
+              
+              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="text-xs text-gray-600 font-medium mb-1">PREVIOUS MONTH</div>
+                <div className="text-lg font-bold text-green-700">
+                  {formatMonthYear(palmOilData.graph_data[palmOilData.graph_data.length - 2]?.date)}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">
+                  Price: {formatPrice(palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr, 'MYR')}
+                </div>
+              </div>
+              
+              <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="text-xs text-gray-600 font-medium mb-1">MONTH-ON-MONTH CHANGE</div>
+                <div className={`text-xl font-bold ${
+                  getPercentageChange(
+                    palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                    palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                  ) > 0 ? 'text-red-600' : 'text-green-600'
+                }`}>
+                  {formatPercentageChange(
+                    getPercentageChange(
+                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                    )
+                  )}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {getChangeStatement(
+                    getPercentageChange(
+                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                    )
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Market Alert Statement */}
+            <div className={`border-l-4 ${
+              getAlertLevel(
+                getPercentageChange(
+                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                  palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                )
+              ).color
+            } p-4 bg-gray-50 rounded-r-lg`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  getAlertLevel(
+                    getPercentageChange(
+                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                    )
+                  ).pulse ? 'animate-pulse' : ''
+                } ${
+                  getAlertLevel(
+                    getPercentageChange(
+                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                    )
+                  ).dotColor
+                }`}></div>
+                <span className="font-bold text-gray-800 text-sm">GLOBAL MARKET ALERT</span>
+                <div className={`ml-auto ${
+                  getAlertLevel(
+                    getPercentageChange(
+                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                    )
+                  ).badgeColor
+                } text-xs px-2 py-1 rounded-full font-medium`}>
+                  {getAlertLevel(
+                    getPercentageChange(
+                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                    )
+                  ).level}
+                </div>
+              </div>
+              <p className="text-gray-700 text-sm">
+                {generateMarketStatement(
+                  getPercentageChange(
+                    palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                    palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                  ),
+                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_inr
+                )}
+              </p>
+              <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                <span>Exchange Rate: 1 MYR = ₹{palmOilData.daily_price?.exchange_rate || 21.77}</span>
+                <span>•</span>
+                <span>Data points: {palmOilData.graph_data.length} months</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 text-center">
+            <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <p className="text-gray-600">No monthly graph data available</p>
+            <button
+              onClick={loadPalmOilData}
+              className="mt-3 bg-[#1e5c2a] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#164523] transition-colors"
+            >
+              Refresh Data
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Filter Controls */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
         <div className="flex flex-wrap gap-4 items-center p-5">
@@ -663,7 +907,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
             </div>
           </div>
           
-          {/* <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">Oil Palm Year</label>
             <div className="relative">
               <select
@@ -676,22 +920,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
                 ))}
               </select>
             </div>
-          </div> */}
-          
-          {/* <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Scenario Mode</label>
-            <div className="relative">
-              <select
-                className="w-full rounded-xl border border-gray-300 text-sm focus:border-[#1e5c2a] focus:ring-[#1e5c2a] py-2 pl-3 pr-8 bg-white"
-                value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
-              >
-                {SCENARIOS.map((o) => (
-                  <option key={o} value={o}>{o}</option>
-                ))}
-              </select>
-            </div>
-          </div> */}
+          </div>
         </div>
       </div>
 
@@ -708,7 +937,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
               </p>
             </div>
             <div className="mt-3 md:mt-0 text-right">
-              <div className="text-2xl font-bold">₹{getCurrentFFBPrice()?.toLocaleString()}/MT</div>
+              <div className="text-2xl font-bold">₹ 19,681/MT</div>
               <div className="text-sm opacity-90">Current FFB Price</div>
             </div>
           </div>
@@ -738,6 +967,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
           </div>
         </div>
       </div>
+
       {/* State Production Data */}
       {selectedState !== "All-India" && currentStateData.productionData && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -775,210 +1005,6 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
         </div>
       )}
 
-      {/* Alert Strips */}
-      <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-  <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="bg-white/20 p-2 rounded-lg">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </div>
-        <div>
-          <h3 className="text-lg font-bold">GLOBAL MARKET DATA STRIP</h3>
-          <p className="text-sm opacity-90">Monthly Price Trends & Percentage Changes</p>
-        </div>
-      </div>
-      <div className="text-right">
-        <div className="text-xs opacity-90">Data from Trading Economics</div>
-        <div className="text-xs opacity-75">Updated: {palmOilData?.timestamp ? formatTimestamp(palmOilData.timestamp) : 'N/A'}</div>
-      </div>
-    </div>
-  </div>
-
-  {palmOilLoading ? (
-    <div className="p-6">
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1e5c2a]"></div>
-        <span className="ml-3 text-gray-600">Loading market data...</span>
-      </div>
-    </div>
-  ) : palmOilData?.graph_data?.length > 0 ? (
-    <div className="p-6">
-      {/* Current Month Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="text-xs text-gray-600 font-medium mb-1">CURRENT MONTH</div>
-          <div className="text-lg font-bold text-[#003366]">
-            {formatMonthYear(palmOilData.graph_data[palmOilData.graph_data.length - 1]?.date)}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            Latest: {formatPrice(palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr, 'MYR')}
-          </div>
-        </div>
-        
-        <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-          <div className="text-xs text-gray-600 font-medium mb-1">PREVIOUS MONTH</div>
-          <div className="text-lg font-bold text-green-700">
-            {formatMonthYear(palmOilData.graph_data[palmOilData.graph_data.length - 2]?.date)}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            Price: {formatPrice(palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr, 'MYR')}
-          </div>
-        </div>
-        
-        <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
-          <div className="text-xs text-gray-600 font-medium mb-1">MONTH-ON-MONTH CHANGE</div>
-          <div className={`text-xl font-bold ${
-            getPercentageChange(
-              palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-              palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-            ) > 0 ? 'text-red-600' : 'text-green-600'
-          }`}>
-            {formatPercentageChange(
-              getPercentageChange(
-                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-              )
-            )}
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {getChangeStatement(
-              getPercentageChange(
-                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-              )
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Market Alert Statement */}
-      <div className={`border-l-4 ${
-        getAlertLevel(
-          getPercentageChange(
-            palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-            palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-          )
-        ).color
-      } p-4 bg-gray-50 rounded-r-lg`}>
-        <div className="flex items-center gap-2 mb-2">
-          <div className={`w-3 h-3 rounded-full ${
-            getAlertLevel(
-              getPercentageChange(
-                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-              )
-            ).pulse ? 'animate-pulse' : ''
-          } ${
-            getAlertLevel(
-              getPercentageChange(
-                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-              )
-            ).dotColor
-          }`}></div>
-          <span className="font-bold text-gray-800 text-sm">GLOBAL MARKET ALERT</span>
-          <div className={`ml-auto ${
-            getAlertLevel(
-              getPercentageChange(
-                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-              )
-            ).badgeColor
-          } text-xs px-2 py-1 rounded-full font-medium`}>
-            {getAlertLevel(
-              getPercentageChange(
-                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-              )
-            ).level}
-          </div>
-        </div>
-        <p className="text-gray-700 text-sm">
-          {generateMarketStatement(
-            getPercentageChange(
-              palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-              palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-            ),
-            palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-            palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_inr
-          )}
-        </p>
-        <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
-          <span>Exchange Rate: 1 MYR = ₹{palmOilData.daily_price?.exchange_rate || 21.77}</span>
-          <span>•</span>
-          <span>Data points: {palmOilData.graph_data.length} months</span>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div className="p-6 text-center">
-      <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      </div>
-      <p className="text-gray-600">No monthly graph data available</p>
-      <button
-        onClick={loadPalmOilData}
-        className="mt-3 bg-[#1e5c2a] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#164523] transition-colors"
-      >
-        Refresh Data
-      </button>
-    </div>
-  )}
-</div>
-
-      {/* Enhanced KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard
-          title="Import Dependence"
-          value={`${supplyGapSummary.importShare}%`}
-          subtitle="Share of edible oil demand met by imports"
-          trend="up"
-          trendValue="+2.4%"
-          tooltip="Higher dependence increases vulnerability to global price shocks"
-          icon="🌍"
-          color="blue"
-          severity="high"
-        />
-        <KpiCard
-          title="Current FFB Price"
-          value={`₹${getCurrentFFBPrice()?.toLocaleString()}/MT`}
-          subtitle={`${selectedState} • ${selectedState === "Telangana" ? "Oct 2025 Fixed" : "Latest Available"}`}
-          trend="stable"
-          trendValue="+0.8%"
-          tooltip="Fresh Fruit Bunches price for farmers"
-          icon="🌴"
-          color="green"
-          severity="low"
-        />
-        <KpiCard
-          title="Area Coverage"
-          value={`${currentStateData.coveragePercentage}%`}
-          subtitle={`${currentStateData.areaCovered?.toLocaleString()} ha of ${currentStateData.potentialArea?.toLocaleString()} ha`}
-          trend="improving"
-          trendValue="+5.2%"
-          tooltip="Percentage of potential area under oil palm cultivation"
-          icon="📈"
-          color="green"
-          severity="medium"
-        />
-        <KpiCard
-          title="Farmer Retention"
-          value={`${(nmeoOpProgress.farmerRetentionScore * 100).toFixed(0)}%`}
-          subtitle="Confidence in oil palm cultivation"
-          trend="improving"
-          trendValue="+3.1%"
-          tooltip="Higher retention indicates sustainable farmer incomes"
-          icon="👨‍🌾"
-          color="green"
-          severity="low"
-        />
-      </div>
-
       {/* Charts Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <ChartCard 
@@ -1000,7 +1026,7 @@ const [showMonthlyTable, setShowMonthlyTable] = useState(false);
   );
 }
 
-// Helper Components remain unchanged from your original code
+// Helper Components
 function ProgressBar({ label, current, target, unit, stateContribution, status }) {
   const percentage = (current / target) * 100;
   const getStatusColor = (percent) => {
@@ -1118,158 +1144,3 @@ function ActionMatrix({ actions, selectedState }) {
     </div>
   );
 }
-
-const formatMonthYear = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', { 
-    month: 'long', 
-    year: 'numeric' 
-  });
-};
-
-// Helper function to format short date
-const formatShortDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', { 
-    day: 'numeric',
-    month: 'short'
-  });
-};
-
-// Calculate percentage change
-const getPercentageChange = (current, previous) => {
-  if (!previous || previous === 0 || !current) return 0;
-  return ((current - previous) / previous) * 100;
-};
-
-// Format percentage change
-const formatPercentageChange = (percent) => {
-  if (percent > 0) return `+${percent.toFixed(2)}%`;
-  if (percent < 0) return `${percent.toFixed(2)}%`;
-  return '0.00%';
-};
-
-// Get change statement
-const getChangeStatement = (percent) => {
-  if (percent > 5) return 'Significant Increase';
-  if (percent > 2) return 'Moderate Increase';
-  if (percent > 0) return 'Slight Increase';
-  if (percent < -5) return 'Significant Decrease';
-  if (percent < -2) return 'Moderate Decrease';
-  if (percent < 0) return 'Slight Decrease';
-  return 'Stable';
-};
-
-// Get alert level based on percentage change
-const getAlertLevel = (percent) => {
-  if (percent > 5) {
-    return {
-      level: 'CRITICAL',
-      color: 'border-red-500',
-      dotColor: 'bg-red-500',
-      badgeColor: 'bg-red-100 text-red-800',
-      pulse: true
-    };
-  } else if (percent > 2) {
-    return {
-      level: 'HIGH',
-      color: 'border-orange-500',
-      dotColor: 'bg-orange-500',
-      badgeColor: 'bg-orange-100 text-orange-800',
-      pulse: false
-    };
-  } else if (percent > 0) {
-    return {
-      level: 'MODERATE',
-      color: 'border-amber-500',
-      dotColor: 'bg-amber-500',
-      badgeColor: 'bg-amber-100 text-amber-800',
-      pulse: false
-    };
-  } else if (percent < -2) {
-    return {
-      level: 'OPPORTUNITY',
-      color: 'border-green-500',
-      dotColor: 'bg-green-500',
-      badgeColor: 'bg-green-100 text-green-800',
-      pulse: false
-    };
-  } else {
-    return {
-      level: 'STABLE',
-      color: 'border-blue-500',
-      dotColor: 'bg-blue-500',
-      badgeColor: 'bg-blue-100 text-blue-800',
-      pulse: false
-    };
-  }
-};
-
-  const formatPrice = (price, currency = 'USD') => {
-    if (!price) return 'N/A';
-    
-    switch (currency) {
-      case 'INR':
-        return formatINR(price);
-      case 'MYR':
-        return formatMYR(price);
-      case 'USD':
-      default:
-        return formatUSD(price);
-    }
-  };
-
-// Generate market statement based on price change
-const generateMarketStatement = (percentChange, currentPriceMYR, currentPriceINR) => {
-  const formattedCurrentPrice = formatPrice(currentPriceMYR, 'MYR');
-  const formattedINRPrice = formatPrice(currentPriceINR, 'INR');
-  const changeFormatted = formatPercentageChange(percentChange);
-  
-  if (percentChange > 5) {
-    return `Global CPO prices surged ${changeFormatted} this month to ${formattedCurrentPrice} (${formattedINRPrice} in INR). Consider temporary duty adjustments to protect domestic consumers and review strategic reserve replenishment timing.`;
-  } else if (percentChange > 2) {
-    return `CPO prices increased ${changeFormatted} to ${formattedCurrentPrice}. Monitor import costs and review subsidy requirements for vulnerable consumer segments.`;
-  } else if (percentChange > 0) {
-    return `CPO prices edged up ${changeFormatted} to ${formattedCurrentPrice}. Market remains within stable range, continue monitoring global supply conditions.`;
-  } else if (percentChange < -5) {
-    return `CPO prices declined ${changeFormatted} to ${formattedCurrentPrice}. Opportunity to build strategic reserves at lower costs. Review import substitution strategy.`;
-  } else if (percentChange < -2) {
-    return `CPO prices decreased ${changeFormatted} to ${formattedCurrentPrice}. Favorable conditions for import cost reduction and consumer price relief.`;
-  } else if (percentChange < 0) {
-    return `CPO prices softened ${changeFormatted} to ${formattedCurrentPrice}. Mild downward pressure on import bills, maintain current policy settings.`;
-  } else {
-    return `CPO prices stable at ${formattedCurrentPrice}. Market equilibrium maintained, current policy settings appear appropriate.`;
-  }
-};
-
-function FilterSelect({ label, value, onChange, options }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <div className="relative">
-        <select
-          className="w-full rounded-lg border-gray-300 text-sm focus:border-[#1e5c2a] focus:ring-[#1e5c2a] py-2 pl-3 pr-8 bg-white"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        >
-          {options.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
-          ▼
-        </div>
-      </div>
-    </div>
-  );
-}
-
-  const getAlertColor = (alertLevel) => {
-    switch(alertLevel) {
-      case 'high': return 'border-red-200';
-      case 'medium': return 'border-orange-200';
-      default: return 'border-green-200';
-    }
-  };
