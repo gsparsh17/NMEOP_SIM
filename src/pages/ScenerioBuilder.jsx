@@ -337,13 +337,100 @@ export default function ScenarioBuilder() {
   };
 
   const downloadReport = () => {
-    const blob = new Blob([reportHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tariff_report_${Date.now().toString(36)}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // Ensure there's a report to download
+    if (!reportHtml) {
+      generateReport();
+    }
+
+    // Helper to load external scripts (only if not already loaded)
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = (e) => reject(e);
+      document.head.appendChild(s);
+    });
+
+    (async () => {
+      try {
+        // Load html2canvas and jsPDF UMD builds from CDN if not present
+        if (!window.html2canvas) {
+          await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+        }
+        if (!window.jspdf) {
+          await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+        }
+
+        // Create hidden container for rendering the report HTML
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '1200px';
+        container.style.padding = '20px';
+        container.innerHTML = reportHtml || buildReportHtml(simulationResults);
+        document.body.appendChild(container);
+
+        // Use html2canvas to rasterize the container
+        const canvas = await window.html2canvas(container, { scale: 2, useCORS: true });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // Calculate image dimensions in mm
+        const pxToMm = (px) => px * 0.264583; // 1 px ≈ 0.264583 mm
+        const imgWidthMm = pxToMm(canvas.width);
+        const imgHeightMm = pxToMm(canvas.height);
+
+        // Scale image to fit page width
+        const scale = Math.min(1, pageWidth / imgWidthMm);
+        const renderWidth = imgWidthMm * scale;
+        const renderHeight = imgHeightMm * scale;
+
+        if (renderHeight <= pageHeight) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, renderWidth, renderHeight);
+        } else {
+          // Paginate: slice the canvas vertically into page-sized chunks
+          const canvasPageHeightPx = Math.floor((pageHeight / scale) / 0.264583);
+          let y = 0;
+          while (y < canvas.height) {
+            const sliceHeight = Math.min(canvasPageHeightPx, canvas.height - y);
+            const pageCanvas = document.createElement('canvas');
+            pageCanvas.width = canvas.width;
+            pageCanvas.height = sliceHeight;
+            const ctx = pageCanvas.getContext('2d');
+            ctx.drawImage(canvas, 0, y, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+            const pageData = pageCanvas.toDataURL('image/jpeg', 0.95);
+            const pageHeightMm = pxToMm(sliceHeight) * scale;
+            pdf.addImage(pageData, 'JPEG', 0, 0, renderWidth, pageHeightMm);
+            y += sliceHeight;
+            if (y < canvas.height) pdf.addPage();
+          }
+        }
+
+        // Trigger download
+        pdf.save(`tariff_report_${Date.now().toString(36)}.pdf`);
+
+        // Cleanup
+        container.remove();
+      } catch (err) {
+        console.error('PDF generation failed:', err);
+        // Fallback: download raw HTML
+        const blob = new Blob([reportHtml || buildReportHtml(simulationResults)], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tariff_report_${Date.now().toString(36)}.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+        if (document.body.contains(container)) container.remove();
+      }
+    })();
   };
 
   const openReportInNewWindow = () => {
