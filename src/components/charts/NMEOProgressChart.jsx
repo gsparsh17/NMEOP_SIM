@@ -108,8 +108,8 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
               type="monotone" 
               dataKey="area" 
               name="Area Under Cultivation" 
-              stroke="#3b82f6" 
-              fill="#3b82f6" 
+              stroke="#f5b836" 
+              fill="#f5b836" 
               fillOpacity={0.1}
               strokeWidth={2}
             />

@@ -29,7 +29,7 @@ export default function App() {
             <span className="text-gray-400 hidden sm:inline">|</span>
             <a href="#" className="hover:text-[#FF9933] transition-colors whitespace-nowrap hidden sm:inline">कृषि एवं किसान कल्याण मंत्रालय</a>
             <span className="text-gray-400 hidden sm:inline">|</span>
-            <a href="#" className="hover:text-[#FF9933] transition-colors whitespace-nowrap hidden sm:inline">Ministry of Agriculture</a>
+            <a href="#" className="hover:text-[#FF9933] transition-colors whitespace-nowrap hidden sm:inline">Ministry of Agriculture & Farmers Welfare</a>
           </div>
           <div className="flex items-center flex-wrap gap-1 sm:gap-4">
             <a href="#main-content" className="hover:text-[#FF9933] transition-colors whitespace-nowrap text-[9px] sm:text-xs">Skip to Main</a>

@@ -918,7 +918,7 @@ export default function Overview() {
                 {selectedState} - Oil Palm Overview
               </h3>
               <p className="text-sm opacity-90">
-                National Mission on Edible Oils • Ministry of Agriculture
+                National Mission on Edible Oils • Ministry of Agriculture & Farmers Welfare
               </p>
             </div>
             <div className="mt-3 md:mt-0 text-right">
@@ -944,7 +944,7 @@ export default function Overview() {
               <div className="text-xs text-green-600 mt-1">{currentStateData.coveragePercentage}% coverage</div>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-600 font-medium mb-1">Expansion Target</div>
+              <div className="text-xs text-gray-600 font-medium mb-1">Expansion Target (2021-2025)</div>
               <div className="text-lg font-bold text-gray-800">
                 {currentStateData.totalExpansionTarget?.toLocaleString()} ha
               </div>

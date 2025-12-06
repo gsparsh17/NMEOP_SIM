@@ -109,9 +109,9 @@ export default function FarmerPayoutCalculator() {
     const industryShare = (FP_Industry / Total_Farmer_Price * 100);
     const govtShare = (VGP_Govt / Total_Farmer_Price * 100);
     
-    if (govtShare > 30) return "High Government Support";
-    if (govtShare > 15) return "Moderate Government Support";
-    if (govtShare > 0) return "Low Government Support";
+    if (govtShare > 30) return "High Government Support Required";
+    if (govtShare > 15) return "Moderate Government Support Required";
+    if (govtShare > 0) return "Low Government Support Required";
     return "Market Driven";
   }, [apiResult]);
 
