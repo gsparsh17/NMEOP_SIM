@@ -29,7 +29,7 @@ export default function App() {
             <span className="text-gray-400 hidden sm:inline">|</span>
             <a href="#" className="hover:text-[#FF9933] transition-colors whitespace-nowrap hidden sm:inline">कृषि एवं किसान कल्याण मंत्रालय</a>
             <span className="text-gray-400 hidden sm:inline">|</span>
-            <a href="#" className="hover:text-[#FF9933] transition-colors whitespace-nowrap hidden sm:inline">Ministry of Agriculture</a>
+            <a href="#" className="hover:text-[#FF9933] transition-colors whitespace-nowrap hidden sm:inline">Ministry of Agriculture & Farmers Welfare</a>
           </div>
           <div className="flex items-center flex-wrap gap-1 sm:gap-4">
             <a href="#main-content" className="hover:text-[#FF9933] transition-colors whitespace-nowrap text-[9px] sm:text-xs">Skip to Main</a>
@@ -91,7 +91,7 @@ export default function App() {
                   alt="State Emblem of India" 
                   className="w-20 h-20 object-contain drop-shadow-md"
                 />
-                <div className="absolute -bottom-1 -right-1 bg-[#FF9933] text-white text-[8px] px-1 py-0.5 rounded">
+                <div className="absolute -bottom-1 -right-3 bg-[#FF9933] text-white text-[8px] px-1 py-0.5 rounded">
                   Official
                 </div>
               </div>
@@ -321,9 +321,9 @@ export default function App() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-[#FF9933] rounded-full"></div>
-                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full border"></div>
-                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-[#138808] rounded-full"></div>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-[#FF9933] rounded-full border border-black"></div>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full border border-black"></div>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-[#138808] rounded-full border border-black"></div>
               </div>
               <span className="text-xs sm:text-sm font-semibold text-gray-700 ml-1">National Portal of India</span>
             </div>

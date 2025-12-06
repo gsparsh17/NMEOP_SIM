@@ -213,7 +213,7 @@ export default function ImpactDashboard() {
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-amber-700">
-                    56%
+                    97%
                   </div>
                   <div className="text-xs text-gray-500">₹80,000 crore/year</div>
                 </div>
@@ -434,7 +434,7 @@ export default function ImpactDashboard() {
         </div>
         <div className="p-6">
           <p className="text-sm text-gray-600 mb-4">
-            Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil. Using Telangana data as proxy for price trends across states.
+            Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil.
           </p>
           <PriceTrendChart ffbData={ffbPriceTrend} cpoData={cpoPriceTrend} selectedState={stateFilter}/>
         </div>
@@ -541,7 +541,7 @@ export default function ImpactDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
                 <div className="font-bold text-amber-700">Price Assurance</div>
-                <div className="text-amber-800">Viability Price (VP) = 14.3% of 5-yr avg CPO price</div>
+                <div className="text-amber-800">Viability Price (VP) = 14.61% of 5-yr avg CPO price</div>
               </div>
               <div>
                 <div className="font-bold text-amber-700">Farmer Support</div>

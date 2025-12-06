@@ -120,6 +120,7 @@ export default function ImportsProdChart({ data = importsProdConsData }) {
           <ComposedChart
             data={data}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+            barCategoryGap="20%"
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             
@@ -140,9 +141,13 @@ export default function ImportsProdChart({ data = importsProdConsData }) {
             
             <Tooltip content={<CustomTooltip />} />
             
-            <Legend 
-              verticalAlign="top" 
-              height={36}
+            <Legend
+              layout="horizontal"
+              verticalAlign="top"
+              align="center"
+              height={48}
+              iconSize={10}
+              wrapperStyle={{ paddingTop: 6 }}
               formatter={(value) => (
                 <span className="text-sm text-gray-700">{value}</span>
               )}
@@ -154,13 +159,13 @@ export default function ImportsProdChart({ data = importsProdConsData }) {
               stroke="#1e5c2a" 
               strokeDasharray="3 3" 
               strokeOpacity={0.3}
-              label={{
-                value: `Avg Imports: ${formatYAxis(averages.avgImports)} MT`,
-                position: 'right',
-                fill: '#1e5c2a',
-                fontSize: 10,
-                opacity: 0.7
-              }}
+              // label={{
+              //   value: `Avg Imports: ${formatYAxis(averages.avgImports)} MT`,
+              //   position: 'right',
+              //   fill: '#1e5c2a',
+              //   fontSize: 10,
+              //   opacity: 0.7
+              // }}
             />
             
             <ReferenceLine 
@@ -168,13 +173,27 @@ export default function ImportsProdChart({ data = importsProdConsData }) {
               stroke="#1e40af" 
               strokeDasharray="3 3" 
               strokeOpacity={0.3}
-              label={{
-                value: `Avg Consumption: ${formatYAxis(averages.avgConsumption)} MT`,
-                position: 'right',
-                fill: '#1e40af',
-                fontSize: 10,
-                opacity: 0.7
-              }}
+              // label={{
+              //   value: `Avg Consumption: ${formatYAxis(averages.avgConsumption)} MT`,
+              //   position: 'right',
+              //   fill: '#1e40af',
+              //   fontSize: 10,
+              //   opacity: 0.7
+              // }}
+            />
+            
+            <ReferenceLine 
+              y={averages.avgProduction} 
+              stroke="#f59e0b" 
+              strokeDasharray="3 3" 
+              strokeOpacity={0.3}
+              // label={{
+              //   value: `Avg Production: ${formatYAxis(averages.avgProduction)} MT`,
+              //   position: 'right',
+              //   fill: '#f59e0b',
+              //   fontSize: 10,
+              //   opacity: 0.7
+              // }}
             />
             
             {/* Imports - Bar chart for better visibility */}
@@ -182,41 +201,29 @@ export default function ImportsProdChart({ data = importsProdConsData }) {
               dataKey="imports" 
               name="Imports (MT)" 
               fill="#1e5c2a" 
-              fillOpacity={0.7}
+              fillOpacity={0.85}
               radius={[2, 2, 0, 0]}
+              barSize={14}
             />
             
-            {/* Consumption - Line chart */}
-            <Line 
-              type="monotone" 
-              dataKey="consumption" 
-              name="Consumption (MT)" 
-              stroke="#1e40af" 
-              strokeWidth={3}
-              dot={{ r: 4, strokeWidth: 2, fill: '#1e40af' }}
-              activeDot={{ 
-                r: 6, 
-                stroke: '#1e40af', 
-                strokeWidth: 2, 
-                fill: '#ffffff'
-              }}
+            {/* Consumption - Bar chart (grouped) */}
+            <Bar
+              dataKey="consumption"
+              name="Consumption (MT)"
+              fill="#1e40af"
+              fillOpacity={0.85}
+              radius={[2, 2, 0, 0]}
+              barSize={14}
             />
             
-            {/* Production - Line chart (secondary scale would be better but keeping simple) */}
-            <Line 
-              type="monotone" 
-              dataKey="production" 
-              name="Domestic Production (MT)" 
-              stroke="#f59e0b" 
-              strokeWidth={3}
-              strokeDasharray="5 5"
-              dot={{ r: 4, strokeWidth: 2, fill: '#f59e0b' }}
-              activeDot={{ 
-                r: 6, 
-                stroke: '#f59e0b', 
-                strokeWidth: 2, 
-                fill: '#ffffff'
-              }}
+            {/* Production - Bar chart (grouped) */}
+            <Bar
+              dataKey="production"
+              name="Domestic Production (MT)"
+              fill="#f59e0b"
+              fillOpacity={0.85}
+              radius={[2, 2, 0, 0]}
+              barSize={14}
             />
           </ComposedChart>
         </ResponsiveContainer>
