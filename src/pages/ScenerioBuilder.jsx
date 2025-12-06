@@ -37,6 +37,10 @@ export default function ScenarioBuilder() {
   const [apiResult, setApiResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  // Report UI State
+  const [showReport, setShowReport] = useState(false);
+  const [reportHtml, setReportHtml] = useState("");
+  const MINISTRY_NAME = "Ministry of Agriculture and Farmers Welfare";
 
   // Get current state data
   const currentStateData = stateWiseData[selectedState] || stateWiseData["Telangana"];
@@ -254,6 +258,100 @@ export default function ScenarioBuilder() {
       oer: currentStateData.OER || 16.0
     };
   }, [apiResult, duty, cess, currentYield, currentSeasonalPrice, currentStateData, error]);
+
+  // --- Report generation helpers ---
+  const buildReportHtml = (results) => {
+    const now = new Date();
+    const timestamp = now.toLocaleString();
+    const status = apiResult && !error ? 'Connected' : error ? 'Error' : 'Not Connected';
+
+    const rows = Object.entries({
+      'CIF Price (₹/MT)': results.cifPrice,
+      'Landed Cost (₹/kg)': results.landedCost,
+      'Retail Price (₹/kg)': results.retailPrice,
+      'Effective Duty (%)': results.effectiveDuty,
+      'Import Volume (M MT)': results.importVolume,
+      'Farmer Price (₹/MT FFB)': results.farmerPrice,
+      'VGP Fiscal Cost (₹ Cr)': results.fiscalCost,
+      'State Self-Sufficiency (%)': results.selfSufficiency,
+      'National Self-Sufficiency (%)': results.nationalSelfSufficiency,
+      'State Production (M MT)': results.stateProduction,
+      'OER (%)': results.oer,
+      'Risk Flag': results.riskFlag,
+    });
+
+    const rowsHtml = rows.map(([k, v]) => `<tr><td style="padding:6px;border:1px solid #ddd">${k}</td><td style="padding:6px;border:1px solid #ddd">${v ?? '-'}</td></tr>`).join('');
+
+    return `<!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Tariff Strategy Report</title>
+          <style>
+            body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;padding:20px}
+            .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+            .ministry{font-weight:700;font-size:18px}
+            .meta{font-size:13px;color:#374151}
+            table{border-collapse:collapse;width:100%;margin-top:12px}
+            th,td{padding:8px;border:1px solid #e5e7eb;text-align:left}
+            .section-title{background:#f3f4f6;padding:8px;margin-top:12px;font-weight:600}
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="ministry">${MINISTRY_NAME}</div>
+              <div class="meta">Tariff Strategy Builder — ${selectedState}</div>
+            </div>
+            <div style="text-align:right">
+              <div class="meta">Generated: ${timestamp}</div>
+              <div class="meta">Report Status: ${status}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Scenario Parameters</div>
+          <table>
+            <tr><td style="width:40%">Mode</td><td>${activeMode === 'ai' ? 'AI-Powered' : 'Manual Input'}</td></tr>
+            <tr><td>Duty (BCD)</td><td>${duty}%</td></tr>
+            <tr><td>Cess</td><td>${cess}%</td></tr>
+            <tr><td>Season</td><td>${seasonalMonth}</td></tr>
+            <tr><td>Spot Price (used)</td><td>${apiResult?.spot_price ?? '-'}</td></tr>
+          </table>
+
+          <div class="section-title">Simulation Results</div>
+          <table>
+            ${rowsHtml}
+          </table>
+
+          <div style="margin-top:18px;font-size:13px;color:#374151">
+            <strong>Notes:</strong> This report summarizes the latest simulation output from the Tariff Strategy Builder. Values marked '-' were not available from the API.
+          </div>
+        </body>
+      </html>`;
+  };
+
+  const generateReport = () => {
+    const html = buildReportHtml(simulationResults);
+    setReportHtml(html);
+    setShowReport(true);
+  };
+
+  const downloadReport = () => {
+    const blob = new Blob([reportHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tariff_report_${Date.now().toString(36)}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const openReportInNewWindow = () => {
+    const w = window.open();
+    if (!w) return;
+    w.document.write(reportHtml);
+    w.document.close();
+  };
 
   // State-specific recommendations
   const stateSpecificContext = useMemo(() => {
@@ -501,12 +599,12 @@ export default function ScenarioBuilder() {
           
           <div className="p-6">
             {/* State Selection */}
-            <SelectInput
+            {/* <SelectInput
               label="State Analysis"
               state={selectedState}
               setState={setSelectedState}
               options={Object.keys(stateWiseData).filter(state => state !== "All-India")}
-            />
+            /> */}
 
             {/* Mode-specific controls */}
             {activeMode === "manual" && (
@@ -580,6 +678,42 @@ export default function ScenarioBuilder() {
               options={["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]}
             />
 
+            {/* Risk Flag Display */}
+            {simulationResults.riskFlag && (
+              <div className={`mt-4 p-4 rounded-lg border ${
+                simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                  ? "bg-red-50 border-red-200"
+                  : "bg-green-50 border-green-200"
+              }`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-3 h-3 rounded-full ${
+                    simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                      ? "bg-red-500"
+                      : "bg-green-500"
+                  }`}></div>
+                  <div className={`font-semibold ${
+                    simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                      ? "text-red-800"
+                      : "text-green-800"
+                  }`}>
+                    Farmer Risk Assessment
+                  </div>
+                </div>
+                <div className={`text-sm ${
+                  simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                    ? "text-red-700"
+                    : "text-green-700"
+                }`}>
+                  {simulationResults.riskFlag}
+                </div>
+                {simulationResults.riskFlag.includes("Risk") && (
+                  <div className="mt-2 text-xs text-red-600 bg-white p-2 rounded border border-red-200">
+                    ⚠️ Recommendation: Consider increasing duty to improve landed cost and protect farmers
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* API Status Panel */}
             <div className={`mt-4 p-3 rounded-lg border ${
               activeMode === "ai" 
@@ -608,7 +742,7 @@ export default function ScenarioBuilder() {
                   <span style={{
                     color: activeMode === "ai" ? "#1e40af" : "#92400e"
                   }}>
-                    API Status:=
+                    API Status:
                   </span>
                   <span className={`font-bold ${apiResult && !error ? "text-green-600" : "text-red-600"}`}>
                     {apiResult && !error ? "Connected" : error ? "Error" : "Not Connected"}
@@ -691,9 +825,9 @@ export default function ScenarioBuilder() {
                 Save Scenario
               </button> */}
               
-              <button className="w-full border border-dashed border-gray-300 text-gray-600 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+              {/* <button className="w-full border border-dashed border-gray-300 text-gray-600 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Compare with Baseline
-              </button>
+              </button> */}
             </div>
           </div>
         </div>
@@ -729,53 +863,225 @@ export default function ScenarioBuilder() {
           
           <div className="p-6">
             <div className="flex flex-col h-full">
-              {/* <div className="flex justify-between items-center mb-6">
-                <div className="flex bg-gray-100 rounded-lg p-1">
-                  <TabPill
-                    label="Prices & Farmers"
-                    active={activeTab === "prices"}
-                    onClick={() => setActiveTab("prices")}
-                  />
-                  <TabPill
-                    label="Imports & Forex"
-                    active={activeTab === "imports"}
-                    onClick={() => setActiveTab("imports")}
-                  />
-                  <TabPill
-                    label="Fiscal Impact"
-                    active={activeTab === "fiscal"}
-                    onClick={() => setActiveTab("fiscal")}
-                  />
-                  <TabPill
-                    label="Seasonal Analysis"
-                    active={activeTab === "seasonal"}
-                    onClick={() => setActiveTab("seasonal")}
-                  />
-                  <TabPill
-                    label="State Capacity"
-                    active={activeTab === "capacity"}
-                    onClick={() => setActiveTab("capacity")}
-                  />
+              {/* API Simulation Results Table */}
+              {apiResult && (
+                <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold">AI Simulation Data Table</h4>
+                        <p className="text-sm opacity-90">Real-time API results with interactive controls</p>
+                      </div>
+                      <div className="text-xs px-2 py-1 bg-white/20 rounded">
+                        LIVE DATA
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameter</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Impact</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {/* Risk Flag Row - Highlighted */}
+                          <tr className={
+                            simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                              ? "bg-red-50 hover:bg-red-100"
+                              : "bg-green-50 hover:bg-green-100"
+                          }>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className={`w-3 h-3 rounded-full mr-3 ${
+                                  simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                                    ? "bg-red-500"
+                                    : "bg-green-500"
+                                }`}></div>
+                                <div className="font-medium text-gray-900">Farmer Risk Flag</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-green-100 text-green-800"
+                              }`}>
+                                {simulationResults.riskFlag}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`flex items-center ${
+                                simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              }`}>
+                                {simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                                  ? "⚠️ Critical"
+                                  : "✓ Safe"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
+                                ? "High impact on farmer viability"
+                                : "Low impact, market stable"}
+                            </td>
+                          </tr>
+                          
+                          {/* CIF Price Row */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                                <div className="font-medium text-gray-900">CIF Price</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-lg font-bold text-blue-600">₹{simulationResults.cifPrice}</div>
+                              <div className="text-xs text-gray-500">{simulationResults.cifSource}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">
+                                {activeMode === "ai" ? "AI Predicted" : "Manual Input"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Base import cost</div>
+                            </td>
+                          </tr>
+                          
+                          {/* Landed Cost Row */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                                <div className="font-medium text-gray-900">Landed Cost</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-lg font-bold text-green-600">₹{simulationResults.landedCost}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">After duty & cess</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Key for farmer price</div>
+                            </td>
+                          </tr>
+                          
+                          {/* Retail Price Row */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                                <div className="font-medium text-gray-900">Retail Price</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-lg font-bold text-purple-600">₹{simulationResults.retailPrice}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Consumer price</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Consumer impact</div>
+                            </td>
+                          </tr>
+                          
+                          {/* Effective Duty Row */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-3 h-3 bg-amber-500 rounded-full mr-3"></div>
+                                <div className="font-medium text-gray-900">Effective Duty</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-lg font-bold text-amber-600">{simulationResults.effectiveDuty}%</div>
+                              <div className="text-xs text-gray-500">BCD: {duty}% + Cess: {cess}%</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">
+                                {Number(simulationResults.effectiveDuty) >= 15 ? "High protection" : Number(simulationResults.effectiveDuty) <= 5 ? "Low protection" : "Moderate"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Trade policy impact</div>
+                            </td>
+                          </tr>
+                          
+                          {/* Farmer Price Row */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-3 h-3 bg-teal-500 rounded-full mr-3"></div>
+                                <div className="font-medium text-gray-900">Farmer Price</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-lg font-bold text-teal-600">₹{simulationResults.farmerPrice.toLocaleString()}</div>
+                              <div className="text-xs text-gray-500">FFB per MT</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Based on duty impact</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Farmer income impact</div>
+                            </td>
+                          </tr>
+                          
+                          {/* Fiscal Cost Row */}
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-3 h-3 bg-indigo-500 rounded-full mr-3"></div>
+                                <div className="font-medium text-gray-900">VGP Fiscal Cost</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-lg font-bold text-indigo-600">₹{simulationResults.fiscalCost} Cr</div>
+                              <div className="text-xs text-gray-500">Annual Viability Gap</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className={`text-sm ${
+                                parseFloat(simulationResults.fiscalCost) > 100 ? "text-red-600" : 
+                                parseFloat(simulationResults.fiscalCost) > 50 ? "text-amber-600" : "text-green-600"
+                              }`}>
+                                {parseFloat(simulationResults.fiscalCost) > 100 ? "High cost" : 
+                                 parseFloat(simulationResults.fiscalCost) > 50 ? "Moderate cost" : "Low cost"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-600">Government expenditure</div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {/* Interactive Controls for Table */}
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        {/* <div className="text-sm text-gray-600">
+                          <span className="font-medium">Simulation ID:</span> {Date.now().toString(36)}
+                        </div> */}
+                        <div className="flex gap-2">
+                          {/* <button className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Export to CSV
+                          </button> */}
+                          <button onClick={generateReport} className="px-4 py-2 text-sm bg-[#003366] text-white rounded-lg hover:bg-[#164523] transition-colors">
+                            Generate Report
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div> */}
-
-              {/* <div className="flex-1 mb-6">
-                {activeTab === "prices" && <PricesTab simulationData={simulationResults} selectedState={selectedState} />}
-                {activeTab === "imports" && <ImportsFXCharts simulationData={simulationResults} />}
-                {activeTab === "fiscal" && <FiscalImpactChart simulationData={simulationResults} />}
-                {activeTab === "seasonal" && <SeasonalAnalysis 
-                  seasonalPattern={seasonalPattern}
-                  currentMonth={seasonalMonth}
-                  seasonAnalysis={seasonAnalysis}
-                  bearingPotential={bearingPotential}
-                  currentAge={plantationAge}
-                />}
-                {activeTab === "capacity" && <StateCapacityAnalysis 
-                  stateData={currentStateData}
-                  selectedState={selectedState}
-                  simulationData={simulationResults}
-                />}
-              </div> */}
+              )}
 
               {/* Enhanced Quick Results Summary */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
@@ -811,7 +1117,7 @@ export default function ScenarioBuilder() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                     <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
                       <div className="text-lg font-bold text-blue-700">₹{simulationResults.cifPrice}</div>
-                        <div className="text-xs text-blue-600">CIF Price Used</div>
+                      <div className="text-xs text-blue-600">CIF Price Used</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
                       <div className="text-lg font-bold text-green-700">{simulationResults.effectiveDuty}%</div>
@@ -873,6 +1179,28 @@ export default function ScenarioBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {showReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowReport(false)} />
+          <div className="relative bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-auto p-6 z-10">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-lg font-bold">{MINISTRY_NAME}</div>
+                <div className="text-sm text-gray-600">Tariff Strategy Report — {selectedState}</div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={downloadReport} className="px-3 py-1 bg-[#003366] text-white rounded">Download</button>
+                <button onClick={openReportInNewWindow} className="px-3 py-1 border rounded">Open</button>
+                <button onClick={() => { setShowReport(false); }} className="px-3 py-1 border rounded">Close</button>
+              </div>
+            </div>
+            <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: reportHtml }} />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
