@@ -474,8 +474,8 @@ export default function ImpactDashboard() {
                     <th className="px-4 py-2 text-left">Year</th>
                     <th className="px-4 py-2 text-right">FFB Production (MT)</th>
                     <th className="px-4 py-2 text-right">CPO Production (MT)</th>
-                    <th className="px-4 py-2 text-right">Extraction Rate</th>
-                    <th className="px-4 py-2 text-right">Area Expansion (ha)</th>
+                    <th className="px-4 py-2 text-right">Area Expansion Target (ha)</th>
+                    <th className="px-4 py-2 text-right">Area Expansion Achieved (ha)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -489,11 +489,10 @@ export default function ImpactDashboard() {
                         {data.cpo ? data.cpo.toLocaleString() : 'N/A'}
                       </td>
                       <td className="px-4 py-2 text-right">
-                        {data.ffb && data.cpo ? ((data.cpo / data.ffb) * 100).toFixed(1) + '%' : 'N/A'}
+                        {data.areaTarget ? data.areaTarget : 'N/A'}
                       </td>
                       <td className="px-4 py-2 text-right">
-                        {/* You would need to add area expansion data here from the PDF tables */}
-                        {year === "2020-21" ? filteredData.stateInfo.areaCovered?.toLocaleString() + ' ha' : '—'}
+                        {data.areaAchieved ? data.areaAchieved : 'N/A'}
                       </td>
                     </tr>
                   ))}

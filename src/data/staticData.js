@@ -477,229 +477,237 @@ export const nmeoOPDetailedData = {
 
 export const stateWiseData = {
   "Andhra Pradesh": {
-    potentialArea: 531379,
-    areaCovered: 185000,
-    coveragePercentage: 34.8, // (185000/531379)*100 = 34.8%
-    areaExpansionTargets: [15000, 20000, 24000, 25000, 28000],
-    totalExpansionTarget: 112000,
-    currentFFBPrice: 17951, // August 2021 price
-    currentCPOPrice: 116159, // August 2021 price
-    OER: 16.26,
-    processingMills: 19,
-    crushingCapacity: 240, // MT/hour
-    productionData: {
-      "2014-15": { ffb: 1007553, cpo: 170478 },
-      "2015-16": { ffb: 1147780, cpo: 193562 },
-      "2016-17": { ffb: 1137398, cpo: 190999 },
-      "2017-18": { ffb: 1427828, cpo: 234696 },
-      "2018-19": { ffb: 1379215, cpo: 232938 },
-      "2019-20": { ffb: 1277760, cpo: 208359 },
-      "2020-21": { ffb: 1471521, cpo: 237900 }
+    "potentialArea": 531379,
+    "areaCovered": 185000,
+    "coveragePercentage": 34.8,
+    "areaExpansionTargets": [15000, 20000, 24000, 25000, 28000],
+    "totalExpansionTarget": 112000,
+    "currentFFBPrice": 17951,
+    "currentCPOPrice": 116159,
+    "OER": 16.26,
+    "processingMills": 19,
+    "crushingCapacity": 240,
+    "productionData": {
+      "2014-15": { "areaTarget": 14000, "areaAchieved": 9259, "ffb": 1007553, "cpo": 170478 },
+      "2015-16": { "areaTarget": 12500, "areaAchieved": 5284, "ffb": 1147780, "cpo": 193562 },
+      "2016-17": { "areaTarget": 12500, "areaAchieved": 6002, "ffb": 1137398, "cpo": 190999 },
+      "2017-18": { "areaTarget": 11500, "areaAchieved": 6157, "ffb": 1427828, "cpo": 234696 },
+      "2018-19": { "areaTarget": 12000, "areaAchieved": 6508, "ffb": 1379215, "cpo": 232938 },
+      "2019-20": { "areaTarget": 8000, "areaAchieved": 6642, "ffb": 1277760, "cpo": 208359 },
+      "2020-21": { "areaTarget": 10000, "areaAchieved": 8801, "ffb": 1471521, "cpo": 237900 },
+      "2021-22": { "areaTarget": 10000, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["East Godavari", "Krishna", "Nellore", "Srikakulam", "Vishakpatnam", "Vizianagaram", "West Godavari"],
-    financialData: {
-      "2021-22": { allocation: 4886.95, release: 1331.00 } // in lakhs
+    "districts": ["East Godavari", "Krishna", "Nellore", "Srikakulam", "Vishakpatnam", "Vizianagaram", "West Godavari"],
+    "financialData": {
+      "2021-22": { "allocation": 4886.95, "release": 1331.00 }
     }
   },
   "Telangana": {
-    potentialArea: 436325,
-    areaCovered: 21382,
-    coveragePercentage: 4.90,
-    areaExpansionTargets: [19000, 22000, 25000, 29300, 30000],
-    totalExpansionTarget: 125300,
-    currentFFBPrice: 15923, // March 2021 price
-    currentCPOPrice: 115715, // October 2025 price from your data
-    OER: 18.04,
-    processingMills: 2,
-    crushingCapacity: 60, // MT/hour (30 TPH each)
-    productionData: {
-      "2014-15": { ffb: 57873, cpo: 10012 },
-      "2015-16": { ffb: 75447, cpo: 12499 },
-      "2016-17": { ffb: 88119, cpo: 8947 },
-      "2017-18": { ffb: 147516, cpo: 27275 },
-      "2018-19": { ffb: 197632, cpo: 37205 },
-      "2019-20": { ffb: 208826, cpo: 38050 },
-      "2020-21": { ffb: 149488, cpo: 26690 }
+    "potentialArea": 436325,
+    "areaCovered": 21382,
+    "coveragePercentage": 4.9,
+    "areaExpansionTargets": [19000, 22000, 25000, 29300, 30000],
+    "totalExpansionTarget": 125300,
+    "currentFFBPrice": 15923,
+    "currentCPOPrice": 115715,
+    "OER": 18.04,
+    "processingMills": 2,
+    "crushingCapacity": 60,
+    "productionData": {
+      "2014-15": { "areaTarget": 2000, "areaAchieved": 972, "ffb": 57873, "cpo": 10012 },
+      "2015-16": { "areaTarget": 2000, "areaAchieved": 434, "ffb": 75447, "cpo": 12499 },
+      "2016-17": { "areaTarget": 3000, "areaAchieved": 673, "ffb": 88119, "cpo": 8947 },
+      "2017-18": { "areaTarget": 2000, "areaAchieved": 1413, "ffb": 147516, "cpo": 27275 },
+      "2018-19": { "areaTarget": 1930, "areaAchieved": 870, "ffb": 197632, "cpo": 37205 },
+      "2019-20": { "areaTarget": 2400, "areaAchieved": 2133, "ffb": 208826, "cpo": 38050 },
+      "2020-21": { "areaTarget": 2500, "areaAchieved": 1860, "ffb": 149488, "cpo": 26690 },
+      "2021-22": { "areaTarget": 8000, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["Khammam", "Kothagudem", "Nalgonda", "Suryapet"],
-    financialData: {
-      "2021-22": { allocation: 3616.50, release: 700.73 } // in lakhs
+    "districts": ["Khammam", "Kothagudem", "Nalgonda", "Suryapet"],
+    "financialData": {
+      "2021-22": { "allocation": 3616.50, "release": 700.73 }
     }
   },
   "Tamil Nadu": {
-    potentialArea: 95719,
-    areaCovered: 32982,
-    coveragePercentage: 34.46,
-    areaExpansionTargets: [1500, 2000, 5000, 5000, 5000],
-    totalExpansionTarget: 18500,
-    currentFFBPrice: 8126, // August 2020 price
-    currentCPOPrice: null, // Not mentioned in document
-    OER: 14.29,
-    processingMills: 1,
-    crushingCapacity: 2.5, // MT/hour
-    productionData: {
-      "2014-15": { ffb: 6568, cpo: 1019 },
-      "2015-16": { ffb: 7810, cpo: 1222 },
-      "2016-17": { ffb: 7422, cpo: 1115 },
-      "2017-18": { ffb: 6995, cpo: 938 },
-      "2018-19": { ffb: 7014, cpo: 1017 },
-      "2019-20": { ffb: 3798, cpo: 553 },
-      "2020-21": { ffb: 3038, cpo: 429 }
+    "potentialArea": 95719,
+    "areaCovered": 32982,
+    "coveragePercentage": 34.46,
+    "areaExpansionTargets": [1500, 2000, 5000, 5000, 5000],
+    "totalExpansionTarget": 18500,
+    "currentFFBPrice": 8126,
+    "currentCPOPrice": null,
+    "OER": 14.29,
+    "processingMills": 1,
+    "crushingCapacity": 2.5,
+    "productionData": {
+      "2014-15": { "areaTarget": 1600, "areaAchieved": 398, "ffb": 6568, "cpo": 1019 },
+      "2015-16": { "areaTarget": 1511, "areaAchieved": 623, "ffb": 7810, "cpo": 1222 },
+      "2016-17": { "areaTarget": 1500, "areaAchieved": 801, "ffb": 7422, "cpo": 1115 },
+      "2017-18": { "areaTarget": 1500, "areaAchieved": 906, "ffb": 6995, "cpo": 938 },
+      "2018-19": { "areaTarget": 1200, "areaAchieved": 741, "ffb": 7014, "cpo": 1017 },
+      "2019-20": { "areaTarget": 600, "areaAchieved": 451, "ffb": 3798, "cpo": 553 },
+      "2020-21": { "areaTarget": 450, "areaAchieved": 573, "ffb": 3038, "cpo": 429 },
+      "2021-22": { "areaTarget": 600, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["Ariyalur", "Cuddalore", "Erode", "Karur", "Perambalur", "Pudukkottai", "Tiruvarur", "Tiruchirapalli", "Thirrupur", "Tiruvelveli", "Villupuram", "Thanjavur", "Nagapattinam", "Theni", "Dingigul", "Coimbatore", "Salem", "Nammakal", "Vellore", "Thirupathur", "Ranipet", "Kanjipuram", "Chengalpattu", "Thiruvallur", "Thiruvannamalai", "Dhamapuri", "Krishnagiri"],
-    financialData: {
-      "2021-22": { allocation: 278.70, release: 41.39 } // in lakhs
+    "districts": ["Ariyalur", "Cuddalore", "Erode", "Karur", "Perambalur", "Pudukkottai", "Tiruvarur", "Tiruchirapalli", "Thirrupur", "Tiruvelveli", "Villupuram", "Thanjavur", "Nagapattinam", "Theni", "Dingigul", "Coimbatore", "Salem", "Nammakal", "Vellore", "Thirupathur", "Ranipet", "Kanjipuram", "Chengalpattu", "Thiruvallur", "Thiruvannamalai", "Dhamapuri", "Krishnagiri"],
+    "financialData": {
+      "2021-22": { "allocation": 278.70, "release": 41.39 }
     }
   },
   "Odisha": {
-    potentialArea: 34291,
-    areaCovered: 23130,
-    coveragePercentage: 67.45, // (23130/34291)*100 = 67.45%
-    areaExpansionTargets: [1500, 2000, 2000, 2500, 2500],
-    totalExpansionTarget: 10500,
-    currentFFBPrice: 17636, // April 2021 price
-    currentCPOPrice: null, // Not mentioned in document
-    OER: null,
-    processingMills: 0, // No operational mills mentioned
-    crushingCapacity: null,
-    productionData: {
-      "2014-15": { ffb: 3769, cpo: 557 },
-      "2015-16": { ffb: 4569, cpo: 618 },
-      "2016-17": { ffb: 4965, cpo: null },
-      "2017-18": { ffb: 6702, cpo: null },
-      "2018-19": { ffb: 6899, cpo: null },
-      "2019-20": { ffb: 7106, cpo: null },
-      "2020-21": { ffb: null, cpo: null }
+    "potentialArea": 34291,
+    "areaCovered": 23130,
+    "coveragePercentage": 67.45,
+    "areaExpansionTargets": [1500, 2000, 2000, 2500, 2500],
+    "totalExpansionTarget": 10500,
+    "currentFFBPrice": 17636,
+    "currentCPOPrice": null,
+    "OER": null,
+    "processingMills": 0,
+    "crushingCapacity": null,
+    "productionData": {
+      "2014-15": { "areaTarget": 1246, "areaAchieved": 1246, "ffb": 3769, "cpo": 557 },
+      "2015-16": { "areaTarget": 1744, "areaAchieved": 1374, "ffb": 4569, "cpo": 618 },
+      "2016-17": { "areaTarget": 1260, "areaAchieved": 1918, "ffb": 4965, "cpo": null },
+      "2017-18": { "areaTarget": 2050, "areaAchieved": 812, "ffb": 6702, "cpo": null },
+      "2018-19": { "areaTarget": 1527, "areaAchieved": 629, "ffb": 6899, "cpo": null },
+      "2019-20": { "areaTarget": 750, "areaAchieved": 703, "ffb": 7106, "cpo": null },
+      "2020-21": { "areaTarget": 700, "areaAchieved": 223, "ffb": null, "cpo": null },
+      "2021-22": { "areaTarget": 900, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["Baragarh", "Gajapathi", "Ganjam", "Mayurbhanj", "Bhadrak", "Balasore", "Dhenkanal", "Cuttack", "Jaipur", "Nowarangapur", "Koraput", "Rayagarha", "Nayagarh", "Boudh", "Sonepur"],
-    financialData: {
-      "2021-22": { allocation: 239.77, release: 0 } // in lakhs
+    "districts": ["Baragarh", "Gajapathi", "Ganjam", "Mayurbhanj", "Bhadrak", "Balasore", "Dhenkanal", "Cuttack", "Jaipur", "Nowarangapur", "Koraput", "Rayagarha", "Nayagarh", "Boudh", "Sonepur"],
+    "financialData": {
+      "2021-22": { "allocation": 239.77, "release": 0 }
     }
   },
   "Karnataka": {
-    potentialArea: 72642,
-    areaCovered: 46954,
-    coveragePercentage: 64.64, // (46954/72642)*100 = 64.64%
-    areaExpansionTargets: [2000, 3300, 4000, 5000, 5000],
-    totalExpansionTarget: 19300,
-    currentFFBPrice: 15306, // March 2020 price
-    currentCPOPrice: 110191, // March 2020 price
-    OER: 0.17, // Document says 0.17% (likely typo, should be ~17%)
-    processingMills: 4,
-    crushingCapacity: 21, // MT/hour
-    productionData: {
-      "2014-15": { ffb: 12638, cpo: 2176 },
-      "2015-16": { ffb: 14740, cpo: 2538 },
-      "2016-17": { ffb: 11912, cpo: 2051 },
-      "2017-18": { ffb: 12917, cpo: 2224 },
-      "2018-19": { ffb: 13238, cpo: 2280 },
-      "2019-20": { ffb: 12685, cpo: 2184 },
-      "2020-21": { ffb: 15877, cpo: 2734 }
+    "potentialArea": 72642,
+    "areaCovered": 46954,
+    "coveragePercentage": 64.64,
+    "areaExpansionTargets": [2000, 3300, 4000, 5000, 5000],
+    "totalExpansionTarget": 19300,
+    "currentFFBPrice": 15306,
+    "currentCPOPrice": 110191,
+    "OER": 0.17,
+    "processingMills": 4,
+    "crushingCapacity": 21,
+    "productionData": {
+      "2014-15": { "areaTarget": 3100, "areaAchieved": 1911, "ffb": 12638, "cpo": 2176 },
+      "2015-16": { "areaTarget": 2000, "areaAchieved": 1151, "ffb": 14740, "cpo": 2538 },
+      "2016-17": { "areaTarget": 1600, "areaAchieved": 966, "ffb": 11912, "cpo": 2051 },
+      "2017-18": { "areaTarget": 1500, "areaAchieved": 1120, "ffb": 12917, "cpo": 2224 },
+      "2018-19": { "areaTarget": 1600, "areaAchieved": 1463, "ffb": 13238, "cpo": 2280 },
+      "2019-20": { "areaTarget": 1700, "areaAchieved": 1350, "ffb": 12685, "cpo": 2184 },
+      "2020-21": { "areaTarget": 1700, "areaAchieved": 624, "ffb": 15877, "cpo": 2734 },
+      "2021-22": { "areaTarget": 1552, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["Mysore", "Mandya", "Chamarajnagar", "Hassan", "Kodagu", "Dakshina Kannada", "Shimoga", "Chickmaglur", "Udupi", "Davangere", "Haveri", "Bellary", "Koppal", "Raichur", "Gadag", "Belgaum", "Uttar Kannada", "Dharwad", "Bijapur", "Bagalkot", "Yadgiri", "Gulbarga", "Bidar"],
-    financialData: {
-      "2021-22": { allocation: 745.66, release: 105.17 } // in lakhs
+    "districts": ["Mysore", "Mandya", "Chamarajnagar", "Hassan", "Kodagu", "Dakshina Kannada", "Shimoga", "Chickmaglur", "Udupi", "Davangere", "Haveri", "Bellary", "Koppal", "Raichur", "Gadag", "Belgaum", "Uttar Kannada", "Dharwad", "Bijapur", "Bagalkot", "Yadgiri", "Gulbarga", "Bidar"],
+    "financialData": {
+      "2021-22": { "allocation": 745.66, "release": 105.17 }
     }
   },
-  // Add missing states from the document
   "Chhattisgarh": {
-    potentialArea: 57150,
-    areaCovered: 5542,
-    coveragePercentage: 9.70, // (5542/57150)*100 = 9.70%
-    areaExpansionTargets: [500, 1500, 4300, 5000, 5100],
-    totalExpansionTarget: 16400,
-    currentFFBPrice: 7626, // January 2021 price
-    currentCPOPrice: null, // No production mentioned
-    OER: null,
-    processingMills: 0,
-    crushingCapacity: null,
-    productionData: {
-      "2014-15": { ffb: 0, cpo: 0 },
-      "2015-16": { ffb: 0, cpo: 0 },
-      "2016-17": { ffb: 18, cpo: 0 },
-      "2017-18": { ffb: 5, cpo: 0 },
-      "2018-19": { ffb: 6, cpo: 0 },
-      "2019-20": { ffb: 279, cpo: 0 },
-      "2020-21": { ffb: 6, cpo: null }
+    "potentialArea": 57150,
+    "areaCovered": 5542,
+    "coveragePercentage": 9.7,
+    "areaExpansionTargets": [500, 1500, 4300, 5000, 5100],
+    "totalExpansionTarget": 16400,
+    "currentFFBPrice": 7626,
+    "currentCPOPrice": null,
+    "OER": null,
+    "processingMills": 0,
+    "crushingCapacity": null,
+    "productionData": {
+      "2014-15": { "areaTarget": 250, "areaAchieved": 250, "ffb": 0, "cpo": 0 },
+      "2015-16": { "areaTarget": 1500, "areaAchieved": 1500, "ffb": 0, "cpo": 0 },
+      "2016-17": { "areaTarget": 2500, "areaAchieved": 1288, "ffb": 18, "cpo": 0 },
+      "2017-18": { "areaTarget": 1500, "areaAchieved": 844, "ffb": 5, "cpo": 0 },
+      "2018-19": { "areaTarget": 2000, "areaAchieved": 863, "ffb": 6, "cpo": 0 },
+      "2019-20": { "areaTarget": 460, "areaAchieved": 226, "ffb": 279, "cpo": 0 },
+      "2020-21": { "areaTarget": 300, "areaAchieved": 159, "ffb": 6, "cpo": null },
+      "2021-22": { "areaTarget": 500, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["Jagdalpur", "Sukma", "Dantewada", "Mahasamund", "Gariyaband", "Kanker", "Bilaspur", "Korba", "Mungeli", "Gorella-penda Marwahi", "Baloda Bazar", "Raigarh", "Janjgir-Champa", "Balod", "Bemetara", "Durg"],
-    financialData: {
-      "2021-22": { allocation: 182.69, release: 0 } // in lakhs
+    "districts": ["Jagdalpur", "Sukma", "Dantewada", "Mahasamund", "Gariyaband", "Kanker", "Bilaspur", "Korba", "Mungeli", "Gorella-penda Marwahi", "Baloda Bazar", "Raigarh", "Janjgir-Champa", "Balod", "Bemetara", "Durg"],
+    "financialData": {
+      "2021-22": { "allocation": 182.69, "release": 0 }
     }
   },
   "Gujarat": {
-    potentialArea: 62361,
-    areaCovered: 6215,
-    coveragePercentage: 9.96,
-    areaExpansionTargets: [500, 1000, 3000, 4000, 4200],
-    totalExpansionTarget: 12700,
-    currentFFBPrice: 11900, // August 2021 price
-    currentCPOPrice: null, // No CPO production mentioned
-    OER: null,
-    processingMills: 1, // Non-operational
-    crushingCapacity: 2.5, // MT/hour
-    productionData: {
-      "2014-15": { ffb: 409, cpo: 0 },
-      "2015-16": { ffb: 523, cpo: 0 },
-      "2016-17": { ffb: 775, cpo: 0 },
-      "2017-18": { ffb: 996, cpo: 0 },
-      "2018-19": { ffb: 1053, cpo: 0 },
-      "2019-20": { ffb: 745, cpo: 0 },
-      "2020-21": { ffb: 7425, cpo: null }
+    "potentialArea": 62361,
+    "areaCovered": 6215,
+    "coveragePercentage": 9.96,
+    "areaExpansionTargets": [500, 1000, 3000, 4000, 4200],
+    "totalExpansionTarget": 12700,
+    "currentFFBPrice": 11900,
+    "currentCPOPrice": null,
+    "OER": null,
+    "processingMills": 1,
+    "crushingCapacity": 2.5,
+    "productionData": {
+      "2014-15": { "areaTarget": 450, "areaAchieved": 281, "ffb": 409, "cpo": 0 },
+      "2015-16": { "areaTarget": 311, "areaAchieved": 573, "ffb": 523, "cpo": 0 },
+      "2016-17": { "areaTarget": 451, "areaAchieved": 217, "ffb": 775, "cpo": 0 },
+      "2017-18": { "areaTarget": 550, "areaAchieved": 428, "ffb": 996, "cpo": 0 },
+      "2018-19": { "areaTarget": 608, "areaAchieved": 245, "ffb": 1053, "cpo": 0 },
+      "2019-20": { "areaTarget": 600, "areaAchieved": 389, "ffb": 745, "cpo": 0 },
+      "2020-21": { "areaTarget": 225, "areaAchieved": 165, "ffb": 7425, "cpo": null },
+      "2021-22": { "areaTarget": 70, "areaAchieved": null, "ffb": 677, "cpo": null }
     },
-    districts: ["Anand", "Navsari", "Kheda", "Panchmahal", "Valsad", "Bharuch", "Narmada", "Vadodara", "Chota Udepur", "Mahi Sagar"],
-    financialData: {
-      "2021-22": { allocation: 178.72, release: 0 } // in lakhs
+    "districts": ["Anand", "Navsari", "Kheda", "Panchmahal", "Valsad", "Bharuch", "Narmada", "Vadodara", "Chota Udepur", "Mahi Sagar"],
+    "financialData": {
+      "2021-22": { "allocation": 178.72, "release": 0 }
     }
   },
   "Goa": {
-    potentialArea: 2000,
-    areaCovered: 970,
-    coveragePercentage: 48.50, // (970/2000)*100 = 48.50%
-    areaExpansionTargets: [20, 180, 200, 200, 200],
-    totalExpansionTarget: 800,
-    currentFFBPrice: null, // Not mentioned
-    currentCPOPrice: null, // Not mentioned
-    OER: null, // Not mentioned
-    processingMills: 1,
-    crushingCapacity: 2.5, // MT/hour
-    productionData: {
-      "2014-15": { ffb: 2146, cpo: 369 },
-      "2015-16": { ffb: 3217, cpo: 579 },
-      "2016-17": { ffb: 2429, cpo: 437 },
-      "2017-18": { ffb: 2108, cpo: 380 },
-      "2018-19": { ffb: 2281, cpo: 411 },
-      "2019-20": { ffb: 1716, cpo: 309 },
-      "2020-21": { ffb: 1717, cpo: 305 }
+    "potentialArea": 2000,
+    "areaCovered": 970,
+    "coveragePercentage": 48.5,
+    "areaExpansionTargets": [20, 180, 200, 200, 200],
+    "totalExpansionTarget": 800,
+    "currentFFBPrice": null,
+    "currentCPOPrice": null,
+    "OER": null,
+    "processingMills": 1,
+    "crushingCapacity": 2.5,
+    "productionData": {
+      "2014-15": { "areaTarget": 0, "areaAchieved": 13, "ffb": 2146, "cpo": 369 },
+      "2015-16": { "areaTarget": 0, "areaAchieved": 9, "ffb": 3217, "cpo": 579 },
+      "2016-17": { "areaTarget": 0, "areaAchieved": 0, "ffb": 2429, "cpo": 437 },
+      "2017-18": { "areaTarget": 20, "areaAchieved": 5, "ffb": 2108, "cpo": 380 },
+      "2018-19": { "areaTarget": 20, "areaAchieved": 2, "ffb": 2281, "cpo": 411 },
+      "2019-20": { "areaTarget": 0, "areaAchieved": 9, "ffb": 1716, "cpo": 309 },
+      "2020-21": { "areaTarget": 0, "areaAchieved": 0, "ffb": 1717, "cpo": 305 },
+      "2021-22": { "areaTarget": 20, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["North Goa", "South Goa"],
-    financialData: {
-      "2021-22": { allocation: 6.01, release: 0 } // in lakhs
+    "districts": ["North Goa", "South Goa"],
+    "financialData": {
+      "2021-22": { "allocation": 6.01, "release": 0 }
     }
   },
   "Kerala": {
-    potentialArea: 43676,
-    areaCovered: 5794,
-    coveragePercentage: 13.27, // (5794/43676)*100 = 13.27%
-    areaExpansionTargets: [0, 1000, 1500, 2000, 2000],
-    totalExpansionTarget: 6500,
-    currentFFBPrice: 9000, // March 2021 price
-    currentCPOPrice: 104823, // March 2021 price
-    OER: 15.69,
-    processingMills: 1,
-    crushingCapacity: 20, // MT/hour
-    productionData: {
-      "2014-15": { ffb: 40798, cpo: 6515 },
-      "2015-16": { ffb: 40611, cpo: 7015 },
-      "2016-17": { ffb: 34198, cpo: 5929 },
-      "2017-18": { ffb: 30220, cpo: 5191 },
-      "2018-19": { ffb: 30269, cpo: 4609 },
-      "2019-20": { ffb: 27201, cpo: 4824 },
-      "2020-21": { ffb: 27627, cpo: 4281 }
+    "potentialArea": 43676,
+    "areaCovered": 5794,
+    "coveragePercentage": 13.27,
+    "areaExpansionTargets": [0, 1000, 1500, 2000, 2000],
+    "totalExpansionTarget": 6500,
+    "currentFFBPrice": 9000,
+    "currentCPOPrice": 104823,
+    "OER": 15.69,
+    "processingMills": 1,
+    "crushingCapacity": 20,
+    "productionData": {
+      "2014-15": { "areaTarget": 500, "areaAchieved": 24, "ffb": 40798, "cpo": 6515 },
+      "2015-16": { "areaTarget": 100, "areaAchieved": 5, "ffb": 40611, "cpo": 7015 },
+      "2016-17": { "areaTarget": 50, "areaAchieved": 9, "ffb": 34198, "cpo": 5929 },
+      "2017-18": { "areaTarget": 50, "areaAchieved": 6, "ffb": 30220, "cpo": 5191 },
+      "2018-19": { "areaTarget": 50, "areaAchieved": 2, "ffb": 30269, "cpo": 4609 },
+      "2019-20": { "areaTarget": 0, "areaAchieved": 8, "ffb": 27201, "cpo": 4824 },
+      "2020-21": { "areaTarget": 0, "areaAchieved": 0, "ffb": 27627, "cpo": 4281 },
+      "2021-22": { "areaTarget": 226, "areaAchieved": null, "ffb": null, "cpo": null }
     },
-    districts: ["Trivandrum", "Kollam", "Pathanamthitta", "Alapuzha", "Kottayam", "Ernakulam", "Malappuram", "Kozhikode", "Wayanadu", "Kasagode", "Palakkad", "Kannur", "Idukki"],
-    financialData: {
-      "2021-22": { allocation: 82.60, release: 0 } // in lakhs
+    "districts": ["Trivandrum", "Kollam", "Pathanamthitta", "Alapuzha", "Kottayam", "Ernakulam", "Malappuram", "Kozhikode", "Wayanadu", "Kasagode", "Palakkad", "Kannur", "Idukki"],
+    "financialData": {
+      "2021-22": { "allocation": 82.60, "release": 0 }
     }
   }
 };
