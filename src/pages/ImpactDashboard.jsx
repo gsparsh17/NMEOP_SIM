@@ -434,7 +434,7 @@ export default function ImpactDashboard() {
         </div>
         <div className="p-6">
           <p className="text-sm text-gray-600 mb-4">
-            Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil. Using Telangana data as proxy for price trends across states.
+            Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil.
           </p>
           <PriceTrendChart ffbData={ffbPriceTrend} cpoData={cpoPriceTrend} selectedState={stateFilter}/>
         </div>

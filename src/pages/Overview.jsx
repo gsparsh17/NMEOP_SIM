@@ -1001,7 +1001,7 @@ export default function Overview() {
 
         <ChartCard 
           title="FFB & CPO Price Trends" 
-          explanation="Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil in Telangana region."
+          explanation="Monthly price movement of Fresh Fruit Bunches and Crude Palm Oil."
         >
           <PriceTrendChart ffbData={ffbPriceTrend} cpoData={cpoPriceTrend} selectedState={selectedState} />
         </ChartCard>

@@ -729,7 +729,7 @@ export default function ScenarioBuilder() {
           
           <div className="p-6">
             <div className="flex flex-col h-full">
-              <div className="flex justify-between items-center mb-6">
+              {/* <div className="flex justify-between items-center mb-6">
                 <div className="flex bg-gray-100 rounded-lg p-1">
                   <TabPill
                     label="Prices & Farmers"
@@ -757,9 +757,9 @@ export default function ScenarioBuilder() {
                     onClick={() => setActiveTab("capacity")}
                   />
                 </div>
-              </div>
+              </div> */}
 
-              <div className="flex-1 mb-6">
+              {/* <div className="flex-1 mb-6">
                 {activeTab === "prices" && <PricesTab simulationData={simulationResults} selectedState={selectedState} />}
                 {activeTab === "imports" && <ImportsFXCharts simulationData={simulationResults} />}
                 {activeTab === "fiscal" && <FiscalImpactChart simulationData={simulationResults} />}
@@ -775,7 +775,7 @@ export default function ScenarioBuilder() {
                   selectedState={selectedState}
                   simulationData={simulationResults}
                 />}
-              </div>
+              </div> */}
 
               {/* Enhanced Quick Results Summary */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
