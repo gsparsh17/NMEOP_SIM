@@ -32,6 +32,11 @@ export default function ImpactDashboard() {
   const [yearFilter, setYearFilter] = useState("2024-25");
   const [monthFilter, setMonthFilter] = useState(MONTHS[11]);
   const [region, setRegion] = useState("National");
+  const [achievementTarget, setAchievementTarget] = useState("1000");
+  const [achievementState, setAchievementState] = useState("Gujarat");
+  const [achievementResult, setAchievementResult] = useState(null);
+  const [loadingAchievement, setLoadingAchievement] = useState(false);
+  const [achievementError, setAchievementError] = useState(null);
 
   // Get filtered data based on current filters
   const filteredData = useMemo(() => {
@@ -136,6 +141,54 @@ export default function ImpactDashboard() {
     }
   }, [stateFilter]);
 
+  // Achievement Prediction API Call
+  const fetchAchievementPrediction = async () => {
+    if (!achievementTarget || !achievementState) {
+      setAchievementError("Please enter target and select state");
+      return;
+    }
+
+    setLoadingAchievement(true);
+    setAchievementError(null);
+    
+    try {
+      const response = await fetch("http://localhost:5000/predict-achievement", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          target: parseInt(achievementTarget),
+          state: achievementState
+        }),
+        mode: 'cors'
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Request Failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Achievement Prediction Response:", data);
+      setAchievementResult(data);
+    } catch (err) {
+      console.error("Achievement Prediction Error:", err);
+      setAchievementError("Failed to fetch prediction. Please check connection.");
+    } finally {
+      setLoadingAchievement(false);
+    }
+  };
+
+  // Calculate efficiency metrics
+  const calculateEfficiency = (rate) => {
+    if (rate >= 0.9) return { label: "Excellent", color: "text-green-600", bg: "bg-green-100" };
+    if (rate >= 0.7) return { label: "Good", color: "text-blue-600", bg: "bg-blue-100" };
+    if (rate >= 0.5) return { label: "Moderate", color: "text-amber-600", bg: "bg-amber-100" };
+    if (rate >= 0.3) return { label: "Low", color: "text-orange-600", bg: "bg-orange-100" };
+    return { label: "Poor", color: "text-red-600", bg: "bg-red-100" };
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       {/* Page Header - Blue Header */}
@@ -225,6 +278,268 @@ export default function ImpactDashboard() {
       </div>
 
       {/* Enhanced Filters - Blue Header */}
+      
+
+      {/* Achievement Prediction API Section - Blue Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">AI-Powered Achievement Predictor</h3>
+                <p className="text-sm opacity-90">
+                  Predict NMEO-OP mission achievement based on state historical rates
+                </p>
+              </div>
+            </div>
+            <div className="text-xs px-2 py-1 bg-white/20 rounded">
+              MACHINE LEARNING MODEL
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Input Panel */}
+            <div className="lg:col-span-2">
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
+                <h4 className="font-bold text-gray-800 mb-4">Prediction Parameters</h4>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Target (Area in hectares)
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-blue-500"
+                        value={achievementTarget}
+                        onChange={(e) => setAchievementTarget(e.target.value)}
+                        placeholder="Enter target (e.g., 1000)"
+                      />
+                      <div className="text-xs text-gray-500 mt-1">
+                        Expected area expansion target for the year
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State/UT
+                      </label>
+                      <select
+                        className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-blue-500"
+                        value={achievementState}
+                        onChange={(e) => setAchievementState(e.target.value)}
+                      >
+                        <option value="">Select State</option>
+                        {STATES.filter(state => state !== "All-India").map(state => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Select state for historical performance analysis
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={fetchAchievementPrediction}
+                      disabled={loadingAchievement || !achievementTarget || !achievementState}
+                      className="px-6 py-3 bg-[#003366] text-white rounded-lg font-medium hover:bg-[#164523] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {loadingAchievement ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Running Prediction...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                          Predict Achievement
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (filteredData.stateInfo.totalExpansionTarget) {
+                          setAchievementTarget(filteredData.stateInfo.totalExpansionTarget.toString());
+                          setAchievementState(stateFilter !== "All-India" ? stateFilter : "Gujarat");
+                        }
+                      }}
+                      className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+                    >
+                      Use Current State Target
+                    </button>
+                  </div>
+                  
+                  {achievementError && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                      ⚠️ {achievementError}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <h5 className="font-medium text-gray-700 mb-2">How it works:</h5>
+                  <ul className="text-sm text-gray-600 space-y-1 ml-5 list-disc">
+                    <li>Uses historical state-wise achievement rates (2014-2020 data)</li>
+                    <li>Applies ML model to predict likely achievement percentage</li>
+                    <li>Considers state-specific implementation capacity</li>
+                    <li>Helps in realistic target setting and resource allocation</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            {/* Results Panel */}
+            <div>
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-5 h-full">
+                <h4 className="font-bold text-blue-900 mb-4">Prediction Results</h4>
+                
+                {achievementResult ? (
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-600 mb-1">Predicted Achievement</div>
+                      <div className="text-3xl font-bold text-blue-700">
+                        {achievementResult.predicted_achievement.toLocaleString()} ha
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        From target of {achievementResult.target.toLocaleString()} ha
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm text-gray-600">State Achievement Rate</span>
+                          <span className="text-lg font-bold text-green-600">
+                            {(achievementResult.rate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="h-2 rounded-full bg-green-500 transition-all duration-300"
+                            style={{ width: `${Math.min(achievementResult.rate * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2">
+                          Historical achievement rate for {achievementResult.state}
+                        </div>
+                      </div>
+                      
+                      <div className={`p-3 rounded-lg border ${calculateEfficiency(achievementResult.rate).bg} ${calculateEfficiency(achievementResult.rate).color} border-current`}>
+                        <div className="font-medium mb-1">Efficiency Rating</div>
+                        <div className="text-sm">
+                          {calculateEfficiency(achievementResult.rate).label} • {((achievementResult.predicted_achievement / achievementResult.target) * 100).toFixed(1)}% target achievement
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200">
+                        <div className="font-medium mb-2">AI Insights:</div>
+                        <div className="space-y-1">
+                          {achievementResult.rate >= 0.9 ? (
+                            <>
+                              <div className="flex items-center gap-2 text-green-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>State has excellent track record</span>
+                              </div>
+                              <div>Likely to exceed target with current support</div>
+                            </>
+                          ) : achievementResult.rate >= 0.7 ? (
+                            <>
+                              <div className="flex items-center gap-2 text-blue-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Good historical performance</span>
+                              </div>
+                              <div>Target is realistic with proper implementation</div>
+                            </>
+                          ) : achievementResult.rate >= 0.5 ? (
+                            <>
+                              <div className="flex items-center gap-2 text-amber-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Moderate achievement rate</span>
+                              </div>
+                              <div>May need additional support to reach target</div>
+                            </>
+                          ) : achievementResult.rate >= 0.3 ? (
+                            <>
+                              <div className="flex items-center gap-2 text-orange-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                <span>Low achievement rate</span>
+                              </div>
+                              <div>Consider reviewing target or increasing support</div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2 text-red-600">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Poor historical performance</span>
+                              </div>
+                              <div>Significant intervention needed to achieve target</div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setAchievementTarget("");
+                          setAchievementResult(null);
+                          setAchievementError(null);
+                        }}
+                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+                      >
+                        Clear Results
+                      </button>
+                      {/* <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors text-sm">
+                        Export Prediction
+                      </button> */}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 mb-3">
+                      <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-medium text-gray-700 mb-2">No Prediction Yet</h4>
+                    <p className="text-sm text-gray-600">
+                      Enter target and select state, then click "Predict Achievement" to see results
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
         
         <div className="p-6">
