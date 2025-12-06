@@ -976,48 +976,6 @@ export default function ScenarioBuilder() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {/* Risk Flag Row - Highlighted */}
-                          <tr className={
-                            simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
-                              ? "bg-red-50 hover:bg-red-100"
-                              : "bg-green-50 hover:bg-green-100"
-                          }>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className={`w-3 h-3 rounded-full mr-3 ${
-                                  simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
-                                    ? "bg-red-500"
-                                    : "bg-green-500"
-                                }`}></div>
-                                <div className="font-medium text-gray-900">Farmer Risk Flag</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-green-100 text-green-800"
-                              }`}>
-                                {simulationResults.riskFlag}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`flex items-center ${
-                                simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
-                                  ? "text-red-600"
-                                  : "text-green-600"
-                              }`}>
-                                {simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
-                                  ? "⚠️ Critical"
-                                  : "✓ Safe"}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {simulationResults.riskFlag.includes("Risk") || simulationResults.riskFlag.includes("Low")
-                                ? "High impact on farmer viability"
-                                : "Low impact, market stable"}
-                            </td>
-                          </tr>
                           
                           {/* CIF Price Row */}
                           <tr className="hover:bg-gray-50">
@@ -1130,7 +1088,7 @@ export default function ScenarioBuilder() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-lg font-bold text-indigo-600">₹{simulationResults.fiscalCost} Cr</div>
+                              <div className="text-lg font-bold text-indigo-600">₹{simulationResults.fiscalCost}</div>
                               <div className="text-xs text-gray-500">Annual Viability Gap</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1149,17 +1107,22 @@ export default function ScenarioBuilder() {
                         </tbody>
                       </table>
                     </div>
+
+                    <div className="mt-4 text-sm bg-yellow-100 border-2 border-yellow-600 text-yellow-600 rounded-lg p-4">
+                      {simulationResults.riskFlag && (
+                        <div className="mb-2">
+                          <strong>Risk Flag:</strong> {simulationResults.riskFlag}
+                        </div>
+                      )}
+                      <div>
+                        <strong>CIF Price Source:</strong> {simulationResults.cifSource === "user_input_spot_price" ? "Manual Spot Price" : "AI Model Prediction"}
+                      </div>
+                    </div>
                     
                     {/* Interactive Controls for Table */}
                     <div className="mt-6 pt-4 border-t border-gray-200">
                       <div className="flex justify-between items-center">
-                        {/* <div className="text-sm text-gray-600">
-                          <span className="font-medium">Simulation ID:</span> {Date.now().toString(36)}
-                        </div> */}
                         <div className="flex gap-2">
-                          {/* <button className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Export to CSV
-                          </button> */}
                           <button onClick={generateReport} className="px-4 py-2 text-sm bg-[#003366] text-white rounded-lg hover:bg-[#164523] transition-colors">
                             Generate Report
                           </button>
@@ -1171,7 +1134,7 @@ export default function ScenarioBuilder() {
               )}
 
               {/* Enhanced Quick Results Summary */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+              {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
                 <div className={`p-4 ${
                   activeMode === "ai" 
                     ? "bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200" 
@@ -1216,10 +1179,10 @@ export default function ScenarioBuilder() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Enhanced Policy Recommendation */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className={`p-4 ${
                   activeMode === "ai" 
                     ? "bg-gradient-to-r from-[#0072bc] to-[#00509e]" 
@@ -1260,8 +1223,8 @@ export default function ScenarioBuilder() {
                       {currentStateData.coveragePercentage < 50 && " Focus on area expansion to utilize untapped potential."}
                     </div>
                   </div>
-                </div>
-              </div>
+                </div> */}
+              {/* </div> */}
             </div>
           </div>
         </div>
