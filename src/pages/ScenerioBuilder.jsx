@@ -1060,7 +1060,7 @@ export default function ScenarioBuilder() {
                           </tr>
                           
                           {/* Farmer Price Row */}
-                          <tr className="hover:bg-gray-50">
+                          {/* <tr className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="w-3 h-3 bg-teal-500 rounded-full mr-3"></div>
@@ -1077,10 +1077,10 @@ export default function ScenarioBuilder() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-600">Farmer income impact</div>
                             </td>
-                          </tr>
+                          </tr> */}
                           
                           {/* Fiscal Cost Row */}
-                          <tr className="hover:bg-gray-50">
+                          {/* <tr className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="w-3 h-3 bg-indigo-500 rounded-full mr-3"></div>
@@ -1103,7 +1103,7 @@ export default function ScenarioBuilder() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-600">Government expenditure</div>
                             </td>
-                          </tr>
+                          </tr> */}
                         </tbody>
                       </table>
                     </div>

@@ -281,7 +281,7 @@ export default function ImpactDashboard() {
       
 
       {/* Achievement Prediction API Section - Blue Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+      {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
         <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -301,12 +301,12 @@ export default function ImpactDashboard() {
               MACHINE LEARNING MODEL
             </div>
           </div>
-        </div>
+        </div> */}
         
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> */}
             {/* Input Panel */}
-            <div className="lg:col-span-2">
+            {/* <div className="lg:col-span-2">
               <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
                 <h4 className="font-bold text-gray-800 mb-4">Prediction Parameters</h4>
                 
@@ -402,10 +402,10 @@ export default function ImpactDashboard() {
                   </ul>
                 </div>
               </div>
-            </div>
+            </div> */}
             
             {/* Results Panel */}
-            <div>
+            {/* <div>
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-5 h-full">
                 <h4 className="font-bold text-blue-900 mb-4">Prediction Results</h4>
                 
@@ -515,11 +515,11 @@ export default function ImpactDashboard() {
                         className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
                       >
                         Clear Results
-                      </button>
+                      </button> */}
                       {/* <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors text-sm">
                         Export Prediction
                       </button> */}
-                    </div>
+                    {/* </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -538,7 +538,7 @@ export default function ImpactDashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
         

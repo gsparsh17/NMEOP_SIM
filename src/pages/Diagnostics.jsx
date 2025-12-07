@@ -27,7 +27,7 @@ export default function DataResources() {
     name: "State & Year wise Production and Area Expansion",
     source: "Ministry of Agriculture",
     description: "Brief on NMEO-OP roles and responsibilities",
-    link: "/data/BriefNMEOOPROL_05052022_6378735355.pdf",
+    link: "/data/BriefNMEOOPRoI_05052022_637873535509820380_OilPalm_RoI_Brief.pdf",
     category: "Policy Documents",
     frequency: "Static",
     format: "PDF"
@@ -57,10 +57,10 @@ export default function DataResources() {
     name: "Palm Oil Retail Price Dataset",
     source: "Compiled Market Data",
     description: "Daily retail price data for Palm Oil Packed across India",
-    link: "/data/daily_retail_price_PalmOilPacked-upto_apr_2015.xlsx",
+    link: "/data/daily_retail_price_PalmOilPacked-upto_apr_2015.csv",
     category: "Market Data",
     frequency: "Daily",
-    format: "Excel"
+    format: "CSV"
   },
   {
     id: 7,

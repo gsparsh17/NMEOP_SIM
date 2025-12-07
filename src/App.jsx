@@ -199,12 +199,12 @@ export default function App() {
                 active={activeScreen === "impact"}
                 onClick={setActiveScreen}
               />
-              <NavItem 
+              {/* <NavItem 
                 id="payout" 
                 label="Farmers Payout Estimator" 
                 active={activeScreen === "payout"}
                 onClick={setActiveScreen}
-              />
+              /> */}
               <NavItem 
                 id="data" 
                 label="Data Resources" 
@@ -254,7 +254,7 @@ export default function App() {
                     setMobileMenuOpen(false);
                   }}
                 />
-                <MobileNavItem 
+                {/* <MobileNavItem 
                   id="payout" 
                   label="Farmers Payout Estimator" 
                   active={activeScreen === "payout"}
@@ -262,7 +262,7 @@ export default function App() {
                     setActiveScreen(id);
                     setMobileMenuOpen(false);
                   }}
-                />
+                /> */}
               </div>
             </div>
           )}
@@ -294,12 +294,12 @@ export default function App() {
                 active={activeScreen === "data"}
                 onClick={setActiveScreen}
               />
-              <MobileBottomNavItem 
+              {/* <MobileBottomNavItem 
                 id="payout" 
                 label="Payout" 
                 active={activeScreen === "payout"}
                 onClick={setActiveScreen}
-              />
+              /> */}
             </div>
           </nav>
         </div>
