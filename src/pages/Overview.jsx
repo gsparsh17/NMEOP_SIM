@@ -632,7 +632,7 @@ export default function Overview() {
                 <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h4 className="text-lg font-bold text-gray-800">1-Year Price Trend (MYR & INR)</h4>
+                      <h4 className="text-lg font-bold text-gray-800">5-Year Price Trend (MYR & INR)</h4>
                       <p className="text-sm text-gray-600">Historical price movement with currency conversion</p>
                     </div>
                     <div className="text-right">

@@ -752,7 +752,7 @@ export default function ScenarioBuilder() {
             />
 
             <ControlInput
-              label="Agricultural Cesses"
+              label="Agricultural Cess"
               value={cess}
               setValue={setCess}
               explanation="Sector-specific levies and charges"
