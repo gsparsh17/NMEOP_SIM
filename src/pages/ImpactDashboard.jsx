@@ -577,11 +577,11 @@ export default function ImpactDashboard() {
               title="Area Expansion"
               current={stateFilter === "All-India" 
                 ? nmeoOPDetailedData.nationalTargets.area.current 
-                : (filteredData.stateInfo.areaCovered / 1000).toFixed(2)}
+                : (filteredData.stateInfo.areaCovered / 100000).toFixed(2)}
               target={stateFilter === "All-India" 
                 ? nmeoOPDetailedData.nationalTargets.area.target2025 
-                : ((filteredData.stateInfo.areaCovered + filteredData.stateInfo.totalExpansionTarget) / 1000).toFixed(2)}
-              unit="lakh ha"
+                : ((filteredData.stateInfo.areaCovered + filteredData.stateInfo.totalExpansionTarget) / 100000).toFixed(2)}
+              unit="Lakh Ha"
               status={stateFilter === "All-India" ? "on-track" : 
                      filteredData.stateInfo.coveragePercentage > 50 ? "on-track" :
                      filteredData.stateInfo.coveragePercentage > 30 ? "improving" :
@@ -590,16 +590,53 @@ export default function ImpactDashboard() {
                 ? "National target: 10 lakh ha by 2025-26" 
                 : `${filteredData.stateInfo.coveragePercentage}% of potential area covered`}
             />
-            <MissionProgress 
-              title="Production Growth"
-              current={nmeoOPDetailedData.nationalTargets.production.current}
-              target={nmeoOPDetailedData.nationalTargets.production.target2025}
-              unit="lakh tonnes"
-              status={stateFilter === "All-India" ? "improving" : "stable"}
-              description={stateFilter === "All-India" 
-                ? "Target: 11.20 lakh tonnes CPO by 2025-26" 
-                : "State production data being compiled"}
-            />
+<MissionProgress 
+  title="Production Growth"
+  current={stateFilter === "All-India" 
+    ? nmeoOPDetailedData.nationalTargets.production.current 
+    : (() => {
+        // Get latest production data for the state
+        const productionData = filteredData.stateInfo.productionData || {};
+        const years = Object.keys(productionData).sort().reverse();
+        
+        for (const year of years) {
+          if (productionData[year]?.cpo) {
+            return (productionData[year].cpo / 100000).toFixed(2); // Convert to lakh tonnes
+          }
+        }
+        return null;
+      })()}
+  target={stateFilter === "All-India" 
+    ? nmeoOPDetailedData.nationalTargets.production.target2025 
+    : (() => {
+        // Calculate estimated production target based on area
+        if (filteredData.stateInfo.totalExpansionTarget && filteredData.stateInfo.potentialArea) {
+          const avgYield = filteredData.stateInfo.OER ? filteredData.stateInfo.OER / 100 : 0.165;
+          // Estimate production from total potential area
+          const estimatedCPO = (filteredData.stateInfo.potentialArea * 3.5 * avgYield) / 100000;
+          return estimatedCPO.toFixed(2);
+        }
+        return null;
+      })()}
+  unit="Lakh Tonnes"
+  status={stateFilter === "All-India" ? "improving" : 
+         filteredData.stateInfo.coveragePercentage > 50 ? "on-track" :
+         filteredData.stateInfo.coveragePercentage > 30 ? "improving" :
+         filteredData.stateInfo.coveragePercentage > 10 ? "stable" : "needs-attention"}
+  description={stateFilter === "All-India" 
+    ? "Target: 11.20 lakh tonnes CPO by 2025-26" 
+    : (() => {
+        if (filteredData.stateInfo.productionData) {
+          const years = Object.keys(filteredData.stateInfo.productionData).sort().reverse();
+          for (const year of years) {
+            if (filteredData.stateInfo.productionData[year]?.cpo) {
+              return `Latest data: ${year} (${(filteredData.stateInfo.productionData[year].cpo / 1000).toFixed(1)}K MT)`;
+            }
+          }
+        }
+        return "Production data being compiled";
+      })()}
+/>
           </div>
         </div>
       </div>
@@ -663,7 +700,7 @@ export default function ImpactDashboard() {
                 </div>
                 <div className="text-sm text-yellow-600 mt-1">Avg CPO (₹/MT)</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {filteredData.stateInfo.currentCPOPrice ? 'Latest available' : '—'}
+                  {filteredData.stateInfo.currentCPOPrice ? 'Latest available' : 'Latest available'}
                 </div>
               </div>
             </div>
@@ -889,14 +926,14 @@ function MissionProgress({ title, current, target, unit, status, description }) 
     <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
       <div className="text-sm font-bold text-gray-700 mb-3">{title}</div>
       <div className="relative inline-block mb-3">
-        <div className="w-20 h-20 rounded-full border-8 border-gray-200 flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full border-8 border-gray-200 flex items-center justify-center">
           <div className="text-center">
             <div className="text-lg font-bold text-gray-800">{current}</div>
             <div className="text-xs text-gray-500">{unit}</div>
           </div>
         </div>
         <div 
-          className={`absolute top-0 left-0 w-20 h-20 rounded-full border-8 ${statusColor} border-t-8 border-r-8 border-b-8 border-l-8 -rotate-45`}
+          className={`absolute top-0 left-0 w-24 h-24 rounded-full border-8 ${statusColor} border-t-8 border-r-8 border-b-8 border-l-8 -rotate-45`}
           style={{ 
             clipPath: `inset(0 ${100 - Math.min(percentage, 100)}% 0 0)`,
             borderColor: status === "on-track" ? "#10b981" : 
