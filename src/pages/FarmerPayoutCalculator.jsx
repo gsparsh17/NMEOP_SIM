@@ -628,7 +628,7 @@ palm nuts</div>
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-lg font-bold text-green-800">Total Farmer Receives</div>
-                          <div className="text-sm text-green-600">Per Metric Ton of FFB</div>
+                          <div className="text-sm text-green-600">Per Kg of FFB</div>
                         </div>
                         <div className="text-3xl font-bold text-green-700">
                           ₹{apiResult.payout_breakdown.Total_Farmer_Price.toFixed(2)}
@@ -678,7 +678,7 @@ palm nuts</div>
           <tr className="hover:bg-gray-50">
             <td className="py-3 px-4 text-sm text-gray-600">1</td>
             <td className="py-3 px-4 text-sm text-gray-800">
-              Net CPO price per MT for the month of {monthName}, {year}
+              Net CPO price per Kg for the month of {monthName}, {year}
             </td>
             <td className="py-3 px-4 text-sm font-medium text-gray-900">
               {apiResult.spot_price.toFixed(2)}
@@ -727,15 +727,27 @@ palm nuts</div>
             <tr className="hover:bg-gray-50">
               <td className="py-3 px-4 text-sm text-gray-600">5</td>
               <td className="py-3 px-4 text-sm text-gray-800">
-                75.25% on 10.15% of Weighted average price of palm nuts
+                75.25% on 10.15% of Weighted average price of palm nuts in MT
               </td>
               <td className="py-3 px-4 text-sm font-medium text-gray-900">
                 {apiResult.payout_breakdown["75.25 percent on 10.15 percent of Weighted average price of palm nuts"].toFixed(2)}
               </td>
             </tr>
           )}
-          
-          {/* Row 6: Total Formula Price Calculation */}
+          {/* Row 6: 75.25% on 10.15% */}
+                {apiResult.payout_breakdown["75.25 percent on 10.15 percent of Weighted average price of palm nuts"] && (
+                <tr className="hover:bg-gray-50">
+                  <td className="py-3 px-4 text-sm text-gray-600">5</td>
+                  <td className="py-3 px-4 text-sm text-gray-800">
+                  75.25% on 10.15% of Weighted average price of palm nuts in Kg
+                  </td>
+                  <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                  {(apiResult.payout_breakdown["75.25 percent on 10.15 percent of Weighted average price of palm nuts"] / 1000).toFixed(3)}
+                  </td>
+                </tr>
+                )}
+                
+                {/* Row 6: Total Formula Price Calculation */}
           <tr className="bg-blue-50">
             <td className="py-3 px-4 text-sm font-medium text-blue-800">6</td>
             <td className="py-3 px-4 text-sm font-medium text-blue-800">
@@ -750,7 +762,7 @@ palm nuts</div>
           <tr className="bg-green-50">
             <td className="py-3 px-4 text-sm font-medium text-green-800">7</td>
             <td className="py-3 px-4 text-sm font-medium text-green-800">
-              VP Target Price (per MT FFB)
+              VP Target Price (per Kg FFB)
             </td>
             <td className="py-3 px-4 text-sm font-bold text-green-900">
               ₹{apiResult.payout_breakdown.VP_Target.toFixed(2)}
@@ -774,7 +786,7 @@ palm nuts</div>
           <tr className="bg-gradient-to-r from-green-50 to-emerald-50 border-t-2 border-green-200">
             <td className="py-4 px-4 text-lg font-bold text-green-900"></td>
             <td className="py-4 px-4 text-lg font-bold text-green-900">
-              Total Farmer Receives (per MT FFB)
+              Total Farmer Receives (per Kg FFB)
             </td>
             <td className="py-4 px-4 text-2xl font-bold text-green-900">
               ₹{apiResult.payout_breakdown.Total_Farmer_Price.toFixed(2)}

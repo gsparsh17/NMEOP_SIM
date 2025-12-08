@@ -154,16 +154,6 @@ export default function App() {
                     <div className="font-semibold text-[#003366]">Nov 2025 - Oct 2026</div>
                   </div>
                   <div className="h-8 w-px bg-gray-300 hidden md:block"></div>
-                  <div className="text-sm">
-                    <div className="text-gray-600">Last Updated:</div>
-                    <div className="font-semibold text-[#003366]">
-                      {new Date().toLocaleDateString('en-IN', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric'
-                      })}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

@@ -1,56 +1,200 @@
 // components/charts/NMEOProgressChart.jsx
 import React from "react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
-import { nmeoOPDetailedData } from "../../data/staticData";
+import { nmeoOPDetailedData, stateWiseData } from "../../data/staticData";
 
 export default function NMEOProgressChart({ selectedState, stateData }) {
   // Generate data for the chart based on selected state
   const generateChartData = () => {
     if (selectedState === "All-India") {
-      // National progress data
+      // National progress data - Historical from 2015-2022
       return [
-        { year: "2021", area: 3.70, production: 2.72, targetArea: 4.00, targetProduction: 3.50 },
-        { year: "2022", area: 4.20, production: 3.10, targetArea: 5.00, targetProduction: 4.50 },
-        { year: "2023", area: 4.80, production: 3.80, targetArea: 6.00, targetProduction: 5.50 },
-        { year: "2024", area: 5.60, production: 4.80, targetArea: 7.00, targetProduction: 6.80 },
-        { year: "2025", area: 6.50, production: 6.00, targetArea: 8.00, targetProduction: 8.50 },
-        { year: "2026", area: 7.50, production: 7.50, targetArea: 10.00, targetProduction: 11.20 }
+        { 
+          year: "2015-16", 
+          area: (() => {
+            // Calculate total area for 2015-16 from state data
+            let totalArea = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2015-16"]?.areaAchieved) {
+                totalArea += state.productionData["2015-16"].areaAchieved;
+              }
+            });
+            return totalArea / 100000; // Convert to lakh ha
+          })(),
+          production: (() => {
+            // Calculate total production for 2015-16
+            let totalCPO = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2015-16"]?.cpo) {
+                totalCPO += state.productionData["2015-16"].cpo;
+              }
+            });
+            return totalCPO / 100000; // Convert to lakh tonnes
+          })()
+        },
+        { 
+          year: "2016-17", 
+          area: (() => {
+            let totalArea = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2016-17"]?.areaAchieved) {
+                totalArea += state.productionData["2016-17"].areaAchieved;
+              }
+            });
+            return totalArea / 100000;
+          })(),
+          production: (() => {
+            let totalCPO = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2016-17"]?.cpo) {
+                totalCPO += state.productionData["2016-17"].cpo;
+              }
+            });
+            return totalCPO / 100000;
+          })()
+        },
+        { 
+          year: "2017-18", 
+          area: (() => {
+            let totalArea = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2017-18"]?.areaAchieved) {
+                totalArea += state.productionData["2017-18"].areaAchieved;
+              }
+            });
+            return totalArea / 100000;
+          })(),
+          production: (() => {
+            let totalCPO = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2017-18"]?.cpo) {
+                totalCPO += state.productionData["2017-18"].cpo;
+              }
+            });
+            return totalCPO / 100000;
+          })()
+        },
+        { 
+          year: "2018-19", 
+          area: (() => {
+            let totalArea = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2018-19"]?.areaAchieved) {
+                totalArea += state.productionData["2018-19"].areaAchieved;
+              }
+            });
+            return totalArea / 100000;
+          })(),
+          production: (() => {
+            let totalCPO = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2018-19"]?.cpo) {
+                totalCPO += state.productionData["2018-19"].cpo;
+              }
+            });
+            return totalCPO / 100000;
+          })()
+        },
+        { 
+          year: "2019-20", 
+          area: (() => {
+            let totalArea = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2019-20"]?.areaAchieved) {
+                totalArea += state.productionData["2019-20"].areaAchieved;
+              }
+            });
+            return totalArea / 100000;
+          })(),
+          production: (() => {
+            let totalCPO = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2019-20"]?.cpo) {
+                totalCPO += state.productionData["2019-20"].cpo;
+              }
+            });
+            return totalCPO / 100000;
+          })()
+        },
+        { 
+          year: "2020-21", 
+          area: (() => {
+            let totalArea = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2020-21"]?.areaAchieved) {
+                totalArea += state.productionData["2020-21"].areaAchieved;
+              }
+            });
+            return totalArea / 100000;
+          })(),
+          production: (() => {
+            let totalCPO = 0;
+            Object.values(stateWiseData).forEach(state => {
+              if (state.productionData && state.productionData["2020-21"]?.cpo) {
+                totalCPO += state.productionData["2020-21"].cpo;
+              }
+            });
+            return totalCPO / 100000;
+          })()
+        },
+        { 
+          year: "2021-22", 
+          area: nmeoOPDetailedData.nationalTargets.area.current, // 3.70 lakh ha
+          production: nmeoOPDetailedData.nationalTargets.production.current, // 2.72 lakh tonnes
+          targetArea: nmeoOPDetailedData.nationalTargets.area.target2025, // 10.00 lakh ha
+          targetProduction: nmeoOPDetailedData.nationalTargets.production.target2025 // 11.20 lakh tonnes
+        }
       ];
     } else {
-      // State-specific data
+      // State-specific data - Historical from 2015-2022
       const stateTargets = nmeoOPDetailedData.stateExpansionTargets[selectedState];
-      if (!stateTargets) return [];
+      if (!stateTargets || !stateData?.productionData) return [];
+      
+      // Get production data for the state
+      const productionData = stateData.productionData;
       
       return [
         { 
-          year: "2021", 
-          area: stateTargets.currentArea / 1000, // Convert to '000 ha
-          production: 0.1, // Placeholder
-          targetArea: stateTargets["2021-22"] / 1000
+          year: "2015-16", 
+          area: productionData["2015-16"]?.areaAchieved ? productionData["2015-16"].areaAchieved / 100000 : 0, // Convert to lakh ha
+          production: productionData["2015-16"]?.cpo ? productionData["2015-16"].cpo / 100000 : 0, // Convert to lakh tonnes
+          targetArea: productionData["2015-16"]?.areaTarget ? productionData["2015-16"].areaTarget / 100000 : 0
         },
         { 
-          year: "2022", 
-          area: (stateTargets.currentArea + stateTargets["2021-22"]) / 1000,
-          production: 0.2,
-          targetArea: stateTargets["2022-23"] / 1000
+          year: "2016-17", 
+          area: productionData["2016-17"]?.areaAchieved ? productionData["2016-17"].areaAchieved / 100000 : 0,
+          production: productionData["2016-17"]?.cpo ? productionData["2016-17"].cpo / 100000 : 0,
+          targetArea: productionData["2016-17"]?.areaTarget ? productionData["2016-17"].areaTarget / 100000 : 0
         },
         { 
-          year: "2023", 
-          area: (stateTargets.currentArea + stateTargets["2021-22"] + stateTargets["2022-23"]) / 1000,
-          production: 0.4,
-          targetArea: stateTargets["2023-24"] / 1000
+          year: "2017-18", 
+          area: productionData["2017-18"]?.areaAchieved ? productionData["2017-18"].areaAchieved / 100000 : 0,
+          production: productionData["2017-18"]?.cpo ? productionData["2017-18"].cpo / 100000 : 0,
+          targetArea: productionData["2017-18"]?.areaTarget ? productionData["2017-18"].areaTarget / 100000 : 0
         },
         { 
-          year: "2024", 
-          area: (stateTargets.currentArea + stateTargets["2021-22"] + stateTargets["2022-23"] + stateTargets["2023-24"]) / 1000,
-          production: 0.7,
-          targetArea: stateTargets["2024-25"] / 1000
+          year: "2018-19", 
+          area: productionData["2018-19"]?.areaAchieved ? productionData["2018-19"].areaAchieved / 100000 : 0,
+          production: productionData["2018-19"]?.cpo ? productionData["2018-19"].cpo / 100000 : 0,
+          targetArea: productionData["2018-19"]?.areaTarget ? productionData["2018-19"].areaTarget / 100000 : 0
         },
         { 
-          year: "2025", 
-          area: (stateTargets.currentArea + stateTargets.total) / 1000,
-          production: 1.2,
-          targetArea: stateTargets["2025-26"] / 1000
+          year: "2019-20", 
+          area: productionData["2019-20"]?.areaAchieved ? productionData["2019-20"].areaAchieved / 100000 : 0,
+          production: productionData["2019-20"]?.cpo ? productionData["2019-20"].cpo / 100000 : 0,
+          targetArea: productionData["2019-20"]?.areaTarget ? productionData["2019-20"].areaTarget / 100000 : 0
+        },
+        { 
+          year: "2020-21", 
+          area: productionData["2020-21"]?.areaAchieved ? productionData["2020-21"].areaAchieved / 100000 : 0,
+          production: productionData["2020-21"]?.cpo ? productionData["2020-21"].cpo / 100000 : 0,
+          targetArea: productionData["2020-21"]?.areaTarget ? productionData["2020-21"].areaTarget / 100000 : 0
+        },
+        { 
+          year: "2021-22", 
+          area: stateData.areaCovered / 100000, // Current area in lakh ha
+          production: productionData["2020-21"]?.cpo ? productionData["2020-21"].cpo / 100000 : 0, // Latest available
+          targetArea: stateTargets["2021-22"] ? stateTargets["2021-22"] / 100000 : 0 // NMEO-OP target
         }
       ];
     }
@@ -75,7 +219,7 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
               stroke="#3b82f6"
               fontSize={12}
               label={{ 
-                value: 'Area (000 ha)', 
+                value: 'Area (lakh ha)', 
                 angle: -90, 
                 position: 'insideLeft',
                 fontSize: 12 
@@ -95,9 +239,10 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
             />
             <Tooltip 
               formatter={(value, name) => {
-                if (name === 'area') return [`${value.toFixed(2)}K ha`, 'Area Under Oil Palm'];
+                if (name === 'area') return [`${value.toFixed(2)} lakh ha`, 'Area Under Oil Palm'];
                 if (name === 'production') return [`${value.toFixed(2)} lakh tonnes`, 'CPO Production'];
-                if (name === 'targetArea') return [`${value.toFixed(2)}K ha`, 'Annual Target'];
+                if (name === 'targetArea') return [`${value.toFixed(2)} lakh ha`, 'Annual Target'];
+                if (name === 'targetProduction') return [`${value.toFixed(2)} lakh tonnes`, '2025 Target'];
                 return value;
               }}
               labelFormatter={(label) => `Year: ${label}`}
@@ -123,16 +268,30 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
               fillOpacity={0.1}
               strokeWidth={2}
             />
-            <Line 
-              yAxisId="left"
-              type="monotone" 
-              dataKey="targetArea" 
-              name="Annual Area Target" 
-              stroke="#3b82f6" 
-              strokeDasharray="5 5"
-              strokeWidth={1}
-              dot={false}
-            />
+            {selectedState === "All-India" && (
+              <>
+                <Line 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="targetArea" 
+                  name="2025 Area Target" 
+                  stroke="#3b82f6" 
+                  strokeDasharray="5 5"
+                  strokeWidth={1}
+                  dot={false}
+                />
+                <Line 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="targetProduction" 
+                  name="2025 Production Target" 
+                  stroke="#10b981" 
+                  strokeDasharray="5 5"
+                  strokeWidth={1}
+                  dot={false}
+                />
+              </>
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -145,7 +304,7 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
             <span className="font-bold">
               {selectedState === "All-India" 
                 ? `${nmeoOPDetailedData.nationalTargets.area.current.toFixed(2)} / 10.00 lakh ha`
-                : `${(stateData?.areaCovered / 1000).toFixed(2)}K / ${(nmeoOPDetailedData.stateExpansionTargets[selectedState]?.potentialArea / 1000).toFixed(2)}K ha`
+                : `${(stateData?.areaCovered / 100000).toFixed(2)} / ${(stateData?.potentialArea / 100000).toFixed(2)} lakh ha`
               }
             </span>
           </div>
@@ -173,7 +332,18 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
             <span className="font-bold">
               {selectedState === "All-India" 
                 ? `${nmeoOPDetailedData.nationalTargets.production.current.toFixed(2)} / 11.20 lakh tonnes`
-                : `—`
+                : (() => {
+                    // Get latest production data for state
+                    if (stateData?.productionData) {
+                      const years = Object.keys(stateData.productionData).sort().reverse();
+                      for (const year of years) {
+                        if (stateData.productionData[year]?.cpo) {
+                          return `${(stateData.productionData[year].cpo / 100000).toFixed(2)} lakh tonnes`;
+                        }
+                      }
+                    }
+                    return "Data being compiled";
+                  })()
               }
             </span>
           </div>
@@ -183,14 +353,29 @@ export default function NMEOProgressChart({ selectedState, stateData }) {
               style={{ 
                 width: `${selectedState === "All-India" 
                   ? nmeoOPDetailedData.nationalTargets.production.progressPercentage 
-                  : 0}%` 
+                  : (() => {
+                      // Calculate production progress for state if data exists
+                      if (stateData?.productionData) {
+                        const years = Object.keys(stateData.productionData).sort().reverse();
+                        for (const year of years) {
+                          const cpo = stateData.productionData[year]?.cpo;
+                          if (cpo) {
+                            // Estimate target production based on potential area
+                            const avgYield = stateData.OER ? stateData.OER / 100 : 0.165;
+                            const targetCPO = (stateData.potentialArea * 3.5 * avgYield) / 100000;
+                            return Math.min((cpo / 100000) / targetCPO * 100, 100);
+                          }
+                        }
+                      }
+                      return 0;
+                    })()}%` 
               }}
             ></div>
           </div>
           <div className="text-xs text-gray-600 text-right">
             {selectedState === "All-India" 
               ? `${nmeoOPDetailedData.nationalTargets.production.progressPercentage.toFixed(1)}% of 2025 target`
-              : "State production data not available"
+              : (stateData?.productionData ? "Using Latest Available Data 2020-21" : "Production data being compiled")
             }
           </div>
         </div>
