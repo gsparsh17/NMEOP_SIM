@@ -12,7 +12,7 @@ import {
   ReferenceLine
 } from 'recharts';
 
-const PalmOilPriceChart = ({ graphData, exchangeRate = 21.77 }) => {
+const PalmOilPriceChart = ({ graphData, exchangeRate = 21.92 }) => {
   const [currency, setCurrency] = useState('myr'); // 'myr' or 'inr'
 
   if (!graphData || graphData.length === 0) {
@@ -284,7 +284,7 @@ const PalmOilPriceChart = ({ graphData, exchangeRate = 21.77 }) => {
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
           <div className="text-sm text-purple-700 font-medium mb-1">Exchange Rate</div>
           <div className="text-lg font-bold text-purple-900">
-            1 MYR = ₹{exchangeRate}
+            1 MYR = ₹21.92
           </div>
           <div className="text-xs text-purple-600 mt-1">
             Fixed conversion rate
