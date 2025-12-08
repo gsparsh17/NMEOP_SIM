@@ -238,11 +238,11 @@ const fetchPalmOilCommodityData = async () => {
         data: {
           daily_price: {
             price_myr: 4156.0,
-            price_inr: 4156.0 * 21.77,
+            price_inr: 4156.0 * 21.92,
             change_myr: -4.0,
             change_percent: "-0.10%",
             currency: "MYR/T",
-            exchange_rate: 21.77,
+            exchange_rate: 21.92,
             unit: "metric ton",
             scraped_at: new Date().toISOString(),
             source: "https://tradingeconomics.com/commodity/palm-oil",
@@ -253,7 +253,7 @@ const fetchPalmOilCommodityData = async () => {
           graph_data: [],
           summary_stats: {},
           timestamp: new Date().toISOString(),
-          exchange_rate: 21.77
+          exchange_rate: 21.92
         },
         note: "Using fallback data due to API error"
       };
@@ -270,11 +270,11 @@ const fetchPalmOilCommodityData = async () => {
       data: {
         daily_price: {
           price_myr: 4156.0,
-          price_inr: 4156.0 * 21.77,
+          price_inr: 4156.0 * 21.92,
           change_myr: -4.0,
           change_percent: "-0.10%",
           currency: "MYR/T",
-          exchange_rate: 21.77,
+          exchange_rate: 21.92,
           unit: "metric ton",
           scraped_at: new Date().toISOString(),
           source: "https://tradingeconomics.com/commodity/palm-oil",
@@ -285,7 +285,7 @@ const fetchPalmOilCommodityData = async () => {
         graph_data: [],
         summary_stats: {},
         timestamp: new Date().toISOString(),
-        exchange_rate: 21.77
+        exchange_rate: 21.92
       },
       note: "Using fallback data due to network error"
     };
@@ -878,7 +878,7 @@ export default function Overview() {
         <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm text-gray-600">
-              Showing {graphData.length} months of data • Exchange rate: 1 MYR = ₹{graphData[0]?.exchange_rate || 21.77}
+              Showing {graphData.length} months of data • Exchange rate: 1 MYR = ₹21.92
             </div>
             <div className="flex items-center gap-4">
               <div className="text-sm">
