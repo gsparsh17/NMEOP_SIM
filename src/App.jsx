@@ -162,7 +162,7 @@ export default function App() {
           {/* Mobile Header Content */}
           <div className="lg:hidden flex flex-col items-center py-3">
             <h1 className="text-lg font-bold text-[#003366] text-center">
-              NMEO-OP Policy Support System
+              PalmPolicy - DSS
             </h1>
             <p className="text-xs text-gray-600 text-center mt-1">
               Ministry of Agriculture & Farmers Welfare

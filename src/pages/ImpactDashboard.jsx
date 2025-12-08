@@ -277,269 +277,6 @@ export default function ImpactDashboard() {
         </div>
       </div>
 
-      {/* Enhanced Filters - Blue Header */}
-      
-
-      {/* Achievement Prediction API Section - Blue Header */}
-      {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-white/20 p-2 rounded-lg">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">AI-Powered Achievement Predictor</h3>
-                <p className="text-sm opacity-90">
-                  Predict NMEO-OP mission achievement based on state historical rates
-                </p>
-              </div>
-            </div>
-            <div className="text-xs px-2 py-1 bg-white/20 rounded">
-              MACHINE LEARNING MODEL
-            </div>
-          </div>
-        </div> */}
-        
-        {/* <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"> */}
-            {/* Input Panel */}
-            {/* <div className="lg:col-span-2">
-              <div className="bg-gray-50 rounded-lg border border-gray-200 p-5">
-                <h4 className="font-bold text-gray-800 mb-4">Prediction Parameters</h4>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Target (Area in hectares)
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-blue-500"
-                        value={achievementTarget}
-                        onChange={(e) => setAchievementTarget(e.target.value)}
-                        placeholder="Enter target (e.g., 1000)"
-                      />
-                      <div className="text-xs text-gray-500 mt-1">
-                        Expected area expansion target for the year
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State/UT
-                      </label>
-                      <select
-                        className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-blue-500"
-                        value={achievementState}
-                        onChange={(e) => setAchievementState(e.target.value)}
-                      >
-                        <option value="">Select State</option>
-                        {STATES.filter(state => state !== "All-India").map(state => (
-                          <option key={state} value={state}>{state}</option>
-                        ))}
-                      </select>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Select state for historical performance analysis
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={fetchAchievementPrediction}
-                      disabled={loadingAchievement || !achievementTarget || !achievementState}
-                      className="px-6 py-3 bg-[#003366] text-white rounded-lg font-medium hover:bg-[#164523] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {loadingAchievement ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Running Prediction...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                          Predict Achievement
-                        </>
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        if (filteredData.stateInfo.totalExpansionTarget) {
-                          setAchievementTarget(filteredData.stateInfo.totalExpansionTarget.toString());
-                          setAchievementState(stateFilter !== "All-India" ? stateFilter : "Gujarat");
-                        }
-                      }}
-                      className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
-                    >
-                      Use Current State Target
-                    </button>
-                  </div>
-                  
-                  {achievementError && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                      ⚠️ {achievementError}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <h5 className="font-medium text-gray-700 mb-2">How it works:</h5>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-5 list-disc">
-                    <li>Uses historical state-wise achievement rates (2014-2020 data)</li>
-                    <li>Applies ML model to predict likely achievement percentage</li>
-                    <li>Considers state-specific implementation capacity</li>
-                    <li>Helps in realistic target setting and resource allocation</li>
-                  </ul>
-                </div>
-              </div>
-            </div> */}
-            
-            {/* Results Panel */}
-            {/* <div>
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200 p-5 h-full">
-                <h4 className="font-bold text-blue-900 mb-4">Prediction Results</h4>
-                
-                {achievementResult ? (
-                  <div className="space-y-5">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-600 mb-1">Predicted Achievement</div>
-                      <div className="text-3xl font-bold text-blue-700">
-                        {achievementResult.predicted_achievement.toLocaleString()} ha
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        From target of {achievementResult.target.toLocaleString()} ha
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm text-gray-600">State Achievement Rate</span>
-                          <span className="text-lg font-bold text-green-600">
-                            {(achievementResult.rate * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full bg-green-500 transition-all duration-300"
-                            style={{ width: `${Math.min(achievementResult.rate * 100, 100)}%` }}
-                          ></div>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-2">
-                          Historical achievement rate for {achievementResult.state}
-                        </div>
-                      </div>
-                      
-                      <div className={`p-3 rounded-lg border ${calculateEfficiency(achievementResult.rate).bg} ${calculateEfficiency(achievementResult.rate).color} border-current`}>
-                        <div className="font-medium mb-1">Efficiency Rating</div>
-                        <div className="text-sm">
-                          {calculateEfficiency(achievementResult.rate).label} • {((achievementResult.predicted_achievement / achievementResult.target) * 100).toFixed(1)}% target achievement
-                        </div>
-                      </div>
-                      
-                      <div className="text-sm text-gray-700 bg-white p-3 rounded border border-gray-200">
-                        <div className="font-medium mb-2">AI Insights:</div>
-                        <div className="space-y-1">
-                          {achievementResult.rate >= 0.9 ? (
-                            <>
-                              <div className="flex items-center gap-2 text-green-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>State has excellent track record</span>
-                              </div>
-                              <div>Likely to exceed target with current support</div>
-                            </>
-                          ) : achievementResult.rate >= 0.7 ? (
-                            <>
-                              <div className="flex items-center gap-2 text-blue-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>Good historical performance</span>
-                              </div>
-                              <div>Target is realistic with proper implementation</div>
-                            </>
-                          ) : achievementResult.rate >= 0.5 ? (
-                            <>
-                              <div className="flex items-center gap-2 text-amber-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>Moderate achievement rate</span>
-                              </div>
-                              <div>May need additional support to reach target</div>
-                            </>
-                          ) : achievementResult.rate >= 0.3 ? (
-                            <>
-                              <div className="flex items-center gap-2 text-orange-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                                <span>Low achievement rate</span>
-                              </div>
-                              <div>Consider reviewing target or increasing support</div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-2 text-red-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>Poor historical performance</span>
-                              </div>
-                              <div>Significant intervention needed to achieve target</div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => {
-                          setAchievementTarget("");
-                          setAchievementResult(null);
-                          setAchievementError(null);
-                        }}
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
-                      >
-                        Clear Results
-                      </button> */}
-                      {/* <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors text-sm">
-                        Export Prediction
-                      </button> */}
-                    {/* </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-gray-400 mb-3">
-                      <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                    </div>
-                    <h4 className="font-medium text-gray-700 mb-2">No Prediction Yet</h4>
-                    <p className="text-sm text-gray-600">
-                      Enter target and select state, then click "Predict Achievement" to see results
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
-
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
         
         <div className="p-6">
@@ -577,11 +314,11 @@ export default function ImpactDashboard() {
               title="Area Expansion"
               current={stateFilter === "All-India" 
                 ? nmeoOPDetailedData.nationalTargets.area.current 
-                : (filteredData.stateInfo.areaCovered / 1000).toFixed(2)}
+                : (filteredData.stateInfo.areaCovered / 100000).toFixed(2)}
               target={stateFilter === "All-India" 
                 ? nmeoOPDetailedData.nationalTargets.area.target2025 
-                : ((filteredData.stateInfo.areaCovered + filteredData.stateInfo.totalExpansionTarget) / 1000).toFixed(2)}
-              unit="lakh ha"
+                : ((filteredData.stateInfo.areaCovered + filteredData.stateInfo.totalExpansionTarget) / 100000).toFixed(2)}
+              unit="Lakh Ha"
               status={stateFilter === "All-India" ? "on-track" : 
                      filteredData.stateInfo.coveragePercentage > 50 ? "on-track" :
                      filteredData.stateInfo.coveragePercentage > 30 ? "improving" :
@@ -590,16 +327,53 @@ export default function ImpactDashboard() {
                 ? "National target: 10 lakh ha by 2025-26" 
                 : `${filteredData.stateInfo.coveragePercentage}% of potential area covered`}
             />
-            <MissionProgress 
-              title="Production Growth"
-              current={nmeoOPDetailedData.nationalTargets.production.current}
-              target={nmeoOPDetailedData.nationalTargets.production.target2025}
-              unit="lakh tonnes"
-              status={stateFilter === "All-India" ? "improving" : "stable"}
-              description={stateFilter === "All-India" 
-                ? "Target: 11.20 lakh tonnes CPO by 2025-26" 
-                : "State production data being compiled"}
-            />
+<MissionProgress 
+  title="Production Growth"
+  current={stateFilter === "All-India" 
+    ? nmeoOPDetailedData.nationalTargets.production.current 
+    : (() => {
+        // Get latest production data for the state
+        const productionData = filteredData.stateInfo.productionData || {};
+        const years = Object.keys(productionData).sort().reverse();
+        
+        for (const year of years) {
+          if (productionData[year]?.cpo) {
+            return (productionData[year].cpo / 100000).toFixed(2); // Convert to lakh tonnes
+          }
+        }
+        return null;
+      })()}
+  target={stateFilter === "All-India" 
+    ? nmeoOPDetailedData.nationalTargets.production.target2025 
+    : (() => {
+        // Calculate estimated production target based on area
+        if (filteredData.stateInfo.totalExpansionTarget && filteredData.stateInfo.potentialArea) {
+          const avgYield = filteredData.stateInfo.OER ? filteredData.stateInfo.OER / 100 : 0.165;
+          // Estimate production from total potential area
+          const estimatedCPO = (filteredData.stateInfo.potentialArea * 3.5 * avgYield) / 100000;
+          return estimatedCPO.toFixed(2);
+        }
+        return null;
+      })()}
+  unit="Lakh Tonnes"
+  status={stateFilter === "All-India" ? "improving" : 
+         filteredData.stateInfo.coveragePercentage > 50 ? "on-track" :
+         filteredData.stateInfo.coveragePercentage > 30 ? "improving" :
+         filteredData.stateInfo.coveragePercentage > 10 ? "stable" : "needs-attention"}
+  description={stateFilter === "All-India" 
+    ? "Target: 11.20 lakh tonnes CPO by 2025-26" 
+    : (() => {
+        if (filteredData.stateInfo.productionData) {
+          const years = Object.keys(filteredData.stateInfo.productionData).sort().reverse();
+          for (const year of years) {
+            if (filteredData.stateInfo.productionData[year]?.cpo) {
+              return `Latest data: ${year} (${(filteredData.stateInfo.productionData[year].cpo / 1000).toFixed(1)}K MT)`;
+            }
+          }
+        }
+        return "Production data being compiled";
+      })()}
+/>
           </div>
         </div>
       </div>
@@ -663,7 +437,7 @@ export default function ImpactDashboard() {
                 </div>
                 <div className="text-sm text-yellow-600 mt-1">Avg CPO (₹/MT)</div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {filteredData.stateInfo.currentCPOPrice ? 'Latest available' : '—'}
+                  {filteredData.stateInfo.currentCPOPrice ? 'Latest available' : 'Latest available'}
                 </div>
               </div>
             </div>
@@ -889,14 +663,14 @@ function MissionProgress({ title, current, target, unit, status, description }) 
     <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
       <div className="text-sm font-bold text-gray-700 mb-3">{title}</div>
       <div className="relative inline-block mb-3">
-        <div className="w-20 h-20 rounded-full border-8 border-gray-200 flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full border-8 border-gray-200 flex items-center justify-center">
           <div className="text-center">
             <div className="text-lg font-bold text-gray-800">{current}</div>
             <div className="text-xs text-gray-500">{unit}</div>
           </div>
         </div>
         <div 
-          className={`absolute top-0 left-0 w-20 h-20 rounded-full border-8 ${statusColor} border-t-8 border-r-8 border-b-8 border-l-8 -rotate-45`}
+          className={`absolute top-0 left-0 w-24 h-24 rounded-full border-8 ${statusColor} border-t-8 border-r-8 border-b-8 border-l-8 -rotate-45`}
           style={{ 
             clipPath: `inset(0 ${100 - Math.min(percentage, 100)}% 0 0)`,
             borderColor: status === "on-track" ? "#10b981" : 
