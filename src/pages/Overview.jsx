@@ -22,6 +22,7 @@ import { getLiveMarketData, getAgriculturalWeatherAlerts, checkAPIStatus } from 
 import ImportsProdChart from "../components/charts/ImportsProdChart";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
 import PalmOilPriceChart from "../components/charts/PalmOilPriceChart";
+import { useNavigate } from "react-router-dom";
 
 // NewsAPI.org Configuration
 const NEWSAPI_KEY = "522b468b39d449b1b1a31de1e5b642e2";
@@ -684,6 +685,15 @@ export default function Overview() {
       clearInterval(newsInterval);
     };
   }, []);
+
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const loadPalmOilData = async () => {
     setPalmOilLoading(true);

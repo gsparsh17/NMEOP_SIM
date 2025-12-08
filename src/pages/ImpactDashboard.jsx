@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   STATES,
   YEARS,
@@ -25,6 +25,7 @@ import NMEOProgressChart from "../components/charts/NMEOProgressChart";
 import StateTargetsTable from "../components/charts/StateTargetsTable";
 import HistoricalExpansionChart from "../components/charts/HistoricalExpansionChart";
 import StabilityCard from "../components/cards/StabilityCard";
+import { useNavigate } from "react-router-dom";
 import IndiaOilPalmMapOSM from '../components/charts/IndiaOilPalmMapOSM';
 
 export default function ImpactDashboard() {
@@ -197,6 +198,15 @@ const getMonthName = (monthNum) => {
     };
     return { ffb: avg(entries, 'ffb'), cpo: avg(entries, 'cpo'), label: yearFilter === 'All Years' ? 'Selected' : `${yearFilter} (avg)` };
   }, [filteredData, selectedPricePoint, monthFilter, yearFilter]);
+
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Get year options based on year type
   const yearOptions = yearTypeFilter === "financialYear" 

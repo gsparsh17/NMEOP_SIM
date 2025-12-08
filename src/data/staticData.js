@@ -475,6 +475,13 @@ export const nmeoOPDetailedData = {
   ]
 };
 
+export const VALID_CREDENTIALS = [
+    { username: 'policy_desk', password: 'MoAFW@2025', role: 'Policy Desk Officer', department: 'Ministry of Agriculture' },
+    { username: 'nmeo_admin', password: 'nmeo_admin', role: 'NMEO-OP Administrator', department: 'Oil Palm Mission' },
+    { username: 'state_officer', password: 'State@Policy123', role: 'State Officer', department: 'State Agriculture Department' },
+    { username: 'analyst', password: 'Data@Analyse2025', role: 'Data Analyst', department: 'Policy Research Wing' }
+];
+
 export const stateWiseData = {
   "Andhra Pradesh": {
     "potentialArea": 531379,
