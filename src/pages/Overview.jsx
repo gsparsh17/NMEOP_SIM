@@ -23,6 +23,7 @@ import ImportsProdChart from "../components/charts/ImportsProdChart";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
 import PalmOilPriceChart from "../components/charts/PalmOilPriceChart";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // NewsAPI.org Configuration
 const NEWSAPI_KEY = "522b468b39d449b1b1a31de1e5b642e2";
@@ -229,40 +230,15 @@ const getFallbackNews = () => {
 const fetchPalmOilCommodityData = async () => {
   try {
     console.log("Fetching palm oil data from API...");
-    const response = await fetch('http://localhost:5000/scrape/palm-oil/all');
     
-    if (!response.ok) {
-      console.error(`API responded with status: ${response.status}`);
-      // Return fallback data
-      return {
-        status: "success",
-        data: {
-          daily_price: {
-            price_myr: 4156.0,
-            price_inr: 4156.0 * 21.92,
-            change_myr: -4.0,
-            change_percent: "-0.10%",
-            currency: "MYR/T",
-            exchange_rate: 21.92,
-            unit: "metric ton",
-            scraped_at: new Date().toISOString(),
-            source: "https://tradingeconomics.com/commodity/palm-oil",
-            source_currency: "MYR",
-            target_currency: "INR",
-            note: "Fallback data"
-          },
-          graph_data: [],
-          summary_stats: {},
-          timestamp: new Date().toISOString(),
-          exchange_rate: 21.92
-        },
-        note: "Using fallback data due to API error"
-      };
+    // Use axios instead of fetch
+    const response = await axios.get('http://localhost:5000/scrape/palm-oil/all');
+    
+    if (response.status === 200) {
+      console.log("Palm oil data fetched successfully:", response.data);
+      return response.data;
     }
     
-    const data = await response.json();
-    console.log("Palm oil data fetched successfully:", data);
-    return data;
   } catch (error) {
     console.error('Error fetching palm oil data:', error);
     // Return fallback data
@@ -689,8 +665,8 @@ export default function Overview() {
   const navigate = useNavigate();
   
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated || isAuthenticated !== 'true') {
+    const isAuthenticated = localStorage.getItem('access_token');
+    if (!isAuthenticated) {
       navigate('/login');
     }
   }, [navigate]);
