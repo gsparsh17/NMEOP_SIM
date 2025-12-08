@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function DataResources() {
   const dataResources = [
@@ -215,6 +216,15 @@ export default function DataResources() {
     "Research Reports",
     "Open Data"
   ];
+
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const [selectedCategory, setSelectedCategory] = React.useState("All");
 

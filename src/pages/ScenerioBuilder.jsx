@@ -13,6 +13,7 @@ import {
   getPriceData,
   nmeoOpProgress
 } from "../data/staticData";
+import { useNavigate } from "react-router-dom";
 
 export default function ScenarioBuilder() {
   // --- 1. State Management ---
@@ -189,6 +190,15 @@ export default function ScenarioBuilder() {
       setSpotPrice(currentMarketSpot);
     }
   }, [useCurrentSpot, currentMarketSpot]);
+
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
+    if (!isAuthenticated || isAuthenticated !== 'true') {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // --- 4. Simulation Results Logic (Hybrid: API + Frontend) ---
   const simulationResults = useMemo(() => {
