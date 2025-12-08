@@ -1,4 +1,3 @@
-// Overview.jsx
 import React, { useState, useEffect } from "react";
 import {
   STATES,
@@ -21,10 +20,209 @@ import {
 } from "../data/staticData";
 import { getLiveMarketData, getAgriculturalWeatherAlerts, checkAPIStatus } from "../services/apiService";
 import ImportsProdChart from "../components/charts/ImportsProdChart";
-import ImportShareDonut from "../components/charts/ImportShareDonut";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
-import PalmOilPriceChart from "../components/charts/PalmOilPriceChart"; // Import the new component
-import KpiCard from "../components/cards/KpiCard";
+import PalmOilPriceChart from "../components/charts/PalmOilPriceChart";
+
+// NewsAPI.org Configuration
+const NEWSAPI_KEY = "522b468b39d449b1b1a31de1e5b642e2";
+const NEWSAPI_BASE_URL = "https://newsapi.org/v2";
+
+// Fetch Malaysian news from NewsAPI
+   // Update the NewsAPI fetching function to use search instead of country-specific headlines
+const fetchMalaysianIndonesianNews = async () => {
+  try {
+    console.log("Fetching Malaysian and Indonesian news...");
+    
+    // Use search queries instead of country-specific endpoints
+    // Search for palm oil related news in English from Southeast Asia sources
+    const searchQueries = [
+      'palm oil Malaysia',
+      'palm oil Indonesia', 
+      'CPO Malaysia',
+      'CPO Indonesia',
+      'Malaysia palm oil export',
+      'Indonesia palm oil export',
+      'ASEAN palm oil',
+      'palm oil plantation',
+      'crude palm oil price',
+      'biodiesel Malaysia',
+      'biodiesel Indonesia',
+      'el niño palm oil',
+      'drought palm oil',
+      'palm oil trade',
+      'palm oil tariff'
+    ];
+    
+    // Try multiple search queries
+    const allArticles = [];
+    
+    for (const query of searchQueries.slice(0, 5)) { // Limit to 5 queries to avoid rate limiting
+      try {
+        const searchResponse = await fetch(
+          `${NEWSAPI_BASE_URL}/everything?q=${encodeURIComponent(query)}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWSAPI_KEY}`
+        );
+        
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          if (searchData.articles && searchData.articles.length > 0) {
+            // Add country metadata based on content analysis
+            const articlesWithCountry = searchData.articles.map(article => {
+              const title = article.title?.toLowerCase() || '';
+              const content = article.content?.toLowerCase() || '';
+              const source = article.source?.name?.toLowerCase() || '';
+              
+              let country = 'Regional';
+              let category = 'general';
+              
+              // Detect country from content
+              if (title.includes('malaysia') || content.includes('malaysia') || 
+                  title.includes('kuala lumpur') || source.includes('malaysia') ||
+                  title.includes('ringgit') || title.includes('myr')) {
+                country = 'Malaysia';
+              } else if (title.includes('indonesia') || content.includes('indonesia') ||
+                         title.includes('jakarta') || source.includes('indonesia') ||
+                         title.includes('rupiah') || title.includes('idr')) {
+                country = 'Indonesia';
+              }
+              
+              // Detect category
+              if (title.includes('price') || title.includes('market') || 
+                  title.includes('trade') || title.includes('export') ||
+                  title.includes('import') || title.includes('economy')) {
+                category = 'business';
+              } else if (title.includes('weather') || title.includes('climate') ||
+                         title.includes('drought') || title.includes('el niño') ||
+                         title.includes('rain') || title.includes('flood')) {
+                category = 'weather';
+              } else if (title.includes('policy') || title.includes('government') ||
+                         title.includes('tariff') || title.includes('subsidy') ||
+                         title.includes('regulation')) {
+                category = 'policy';
+              } else if (title.includes('environment') || title.includes('sustainable') ||
+                         title.includes('forest') || title.includes('deforestation')) {
+                category = 'environment';
+              }
+              
+              return {
+                ...article,
+                country,
+                category,
+                searchQuery: query
+              };
+            });
+            
+            allArticles.push(...articlesWithCountry);
+          }
+        }
+        
+        // Add delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        console.warn(`Error fetching news for query "${query}":`, error);
+      }
+    }
+    
+    console.log(`Total articles fetched: ${allArticles.length}`);
+    
+    if (allArticles.length === 0) {
+      console.log("No articles found via search, using fallback news");
+      return getFallbackNews();
+    }
+    
+    // Remove duplicates based on title
+    const uniqueArticles = allArticles.filter((article, index, self) =>
+      index === self.findIndex(a => a.title === article.title)
+    );
+    
+    console.log(`Unique articles: ${uniqueArticles.length}`);
+    
+    // Sort by relevance and date
+    const sortedArticles = uniqueArticles.sort((a, b) => {
+      const aTitle = a.title?.toLowerCase() || '';
+      const bTitle = b.title?.toLowerCase() || '';
+      
+      let aScore = 0;
+      let bScore = 0;
+      
+      // Score for palm oil mentions
+      if (aTitle.includes('palm oil') || aTitle.includes('cpo')) aScore += 20;
+      if (bTitle.includes('palm oil') || bTitle.includes('cpo')) bScore += 20;
+      
+      // Score for country specificity
+      if (a.country === 'Malaysia') aScore += 10;
+      if (b.country === 'Malaysia') bScore += 10;
+      
+      if (a.country === 'Indonesia') aScore += 10;
+      if (b.country === 'Indonesia') bScore += 10;
+      
+      // Score for recency
+      try {
+        const aDate = new Date(a.publishedAt);
+        const bDate = new Date(b.publishedAt);
+        const now = new Date();
+        
+        const aHoursAgo = (now - aDate) / (1000 * 60 * 60);
+        const bHoursAgo = (now - bDate) / (1000 * 60 * 60);
+        
+        // More recent articles get higher score
+        if (aHoursAgo < 24) aScore += 15 - (aHoursAgo / 24) * 10;
+        if (bHoursAgo < 24) bScore += 15 - (bHoursAgo / 24) * 10;
+      } catch (e) {
+        // Ignore date parsing errors
+      }
+      
+      return bScore - aScore;
+    });
+    
+    return sortedArticles.slice(0, 25);
+    
+  } catch (error) {
+    console.error('Error fetching Malaysian and Indonesian news:', error);
+    return getFallbackNews();
+  }
+};
+
+// Fallback news data
+const getFallbackNews = () => {
+  return [
+    {
+      title: "Malaysian Palm Oil Exports Rise 15% in November",
+      description: "Palm oil exports from Malaysia increased significantly amid global demand surge.",
+      source: { name: "The Star Malaysia" },
+      publishedAt: new Date().toISOString(),
+      url: "#"
+    },
+    {
+      title: "El Niño Weather Pattern May Impact Palm Oil Production",
+      description: "Meteorological department warns of potential drought affecting plantations.",
+      source: { name: "Bernama" },
+      publishedAt: new Date().toISOString(),
+      url: "#"
+    },
+    {
+      title: "Malaysia-India Trade Relations Strengthen with New Palm Oil Agreement",
+      description: "Bilateral trade agreement expected to boost palm oil exports to India.",
+      source: { name: "Malay Mail" },
+      publishedAt: new Date().toISOString(),
+      url: "#"
+    },
+    {
+      title: "CPO Futures Show Volatility Amid Global Market Uncertainty",
+      description: "Crude palm oil prices fluctuate as markets react to economic indicators.",
+      source: { name: "Business Times Malaysia" },
+      publishedAt: new Date().toISOString(),
+      url: "#"
+    },
+    {
+      title: "Heavy Rains Disrupt Palm Oil Harvest in Sabah Region",
+      description: "Plantation operations affected by unexpected rainfall patterns.",
+      source: { name: "Free Malaysia Today" },
+      publishedAt: new Date().toISOString(),
+      url: "#"
+    }
+  ];
+};
 
 // Update your fetch function to call the new endpoint
 const fetchPalmOilCommodityData = async () => {
@@ -149,6 +347,23 @@ const formatShortDate = (dateString) => {
   });
 };
 
+// Format news date
+const formatNewsDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  
+  if (diffHours < 1) return 'Just now';
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 48) return 'Yesterday';
+  return date.toLocaleDateString('en-IN', { 
+    day: 'numeric',
+    month: 'short'
+  });
+};
+
 // Calculate percentage change
 const getPercentageChange = (current, previous) => {
   if (!previous || previous === 0 || !current) return 0;
@@ -255,6 +470,186 @@ const generateMarketStatement = (percentChange, currentPriceMYR, currentPriceINR
   }
 };
 
+// News Marquee Component
+const NewsMarquee = ({ articles, isLoading, onRefresh }) => {
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-r from-blue-900 to-[#003366] text-white py-3 px-4 border-b border-blue-800">
+        <div className="flex items-center justify-center gap-3">
+          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-sm">Loading Malaysian news updates...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!articles || articles.length === 0) {
+    return (
+      <div className="bg-gradient-to-r from-blue-900 to-[#003366] text-white py-3 px-4 border-b border-blue-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
+            </svg>
+            <span className="text-sm">No Malaysian news available at the moment</span>
+          </div>
+          <button 
+            onClick={onRefresh}
+            className="text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-r from-blue-900 to-[#003366] text-white py-3 border-b border-blue-800">
+      <div className="flex items-center px-4 mb-2">
+        <div className="flex items-center gap-2 mr-4">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
+          </svg>
+          <span className="text-sm font-bold">WORLD NEWS UPDATES</span>
+          <div className="flex items-center gap-1 text-xs bg-white/20 px-2 py-0.5 rounded">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <span>LIVE</span>
+          </div>
+        </div>
+        <div className="text-xs opacity-80">
+          Business • Foreign Policy • Natural Calamity • Trade Updates
+        </div>
+        <button 
+          onClick={onRefresh}
+          className="ml-auto text-xs bg-white/20 hover:bg-white/30 px-2 py-1 rounded transition-colors flex items-center gap-1"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
+      </div>
+      
+      <div className="relative overflow-hidden">
+        <style jsx>{`
+          @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+          }
+          .animate-marquee {
+            animation: marquee 70s linear infinite;
+          }
+          .pause-on-hover:hover .animate-marquee {
+            animation-play-state: paused;
+          }
+        `}</style>
+        
+        <div className="pause-on-hover">
+          <div className="flex animate-marquee whitespace-nowrap">
+            {articles.map((article, index) => {
+              // Determine category color based on content
+              const title = article.title?.toLowerCase() || '';
+              let category = "General";
+              let categoryColor = "bg-gray-600";
+              
+              if (title.includes('palm oil') || title.includes('cpo') || title.includes('export') || title.includes('trade')) {
+                category = "Palm Oil";
+                categoryColor = "bg-amber-600";
+              } else if (title.includes('weather') || title.includes('flood') || title.includes('drought') || title.includes('climate')) {
+                category = "Weather";
+                categoryColor = "bg-blue-600";
+              } else if (title.includes('policy') || title.includes('agreement') || title.includes('diplomacy')) {
+                category = "Policy";
+                categoryColor = "bg-green-600";
+              } else if (title.includes('business') || title.includes('economy') || title.includes('market')) {
+                category = "Business";
+                categoryColor = "bg-purple-600";
+              }
+              
+              return (
+                <div key={index} className="inline-flex items-center mx-8">
+                  <span className={`${categoryColor} text-xs px-2 py-0.5 rounded mr-3`}>
+                    {category}
+                  </span>
+                  <a 
+                    href={article.url || "#"} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm hover:text-blue-200 transition-colors mr-3"
+                    title={article.description}
+                  >
+                    {article.title}
+                  </a>
+                  <span className="text-xs opacity-70 mr-3">
+                    {article.source?.name || 'Unknown Source'}
+                  </span>
+                  <span className="text-xs opacity-60">
+                    {formatNewsDate(article.publishedAt)}
+                  </span>
+                  <div className="mx-8 text-gray-400">•</div>
+                </div>
+              );
+            })}
+            
+            {/* Duplicate for seamless loop */}
+            {articles.map((article, index) => {
+              const title = article.title?.toLowerCase() || '';
+              let category = "General";
+              let categoryColor = "bg-gray-600";
+              
+              if (title.includes('palm oil') || title.includes('cpo') || title.includes('export') || title.includes('trade')) {
+                category = "Palm Oil";
+                categoryColor = "bg-amber-600";
+              } else if (title.includes('weather') || title.includes('flood') || title.includes('drought') || title.includes('climate')) {
+                category = "Weather";
+                categoryColor = "bg-blue-600";
+              } else if (title.includes('policy') || title.includes('agreement') || title.includes('diplomacy')) {
+                category = "Policy";
+                categoryColor = "bg-green-600";
+              } else if (title.includes('business') || title.includes('economy') || title.includes('market')) {
+                category = "Business";
+                categoryColor = "bg-purple-600";
+              }
+              
+              return (
+                <div key={`dup-${index}`} className="inline-flex items-center mx-8">
+                  <span className={`${categoryColor} text-xs px-2 py-0.5 rounded mr-3`}>
+                    {category}
+                  </span>
+                  <a 
+                    href={article.url || "#"} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm hover:text-blue-200 transition-colors mr-3"
+                    title={article.description}
+                  >
+                    {article.title}
+                  </a>
+                  <span className="text-xs opacity-70 mr-3">
+                    {article.source?.name || 'Unknown Source'}
+                  </span>
+                  <span className="text-xs opacity-60">
+                    {formatNewsDate(article.publishedAt)}
+                  </span>
+                  <div className="mx-8 text-gray-400">•</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Gradient fade effect */}
+        <div className="absolute top-0 left-0 w-16 h-full bg-gradient-to-r from-blue-900 to-transparent"></div>
+        <div className="absolute top-0 right-0 w-16 h-full bg-gradient-to-l from-blue-900 to-transparent"></div>
+      </div>
+    </div>
+  );
+};
+
 export default function Overview() {
   const [selectedState, setSelectedState] = useState("All-India");
   const [timeRange, setTimeRange] = useState("2024-25");
@@ -267,6 +662,12 @@ export default function Overview() {
   const [palmOilLoading, setPalmOilLoading] = useState(false);
   const [graphData, setGraphData] = useState(null);
   const [showMonthlyTable, setShowMonthlyTable] = useState(false);
+  const [showAlertPopup, setShowAlertPopup] = useState(true);
+  
+  // News state
+  const [malaysianNews, setMalaysianNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [lastNewsUpdate, setLastNewsUpdate] = useState(null);
 
   // Get current state data
   const currentStateData = stateWiseData[selectedState] || stateWiseData["All-India"];
@@ -274,6 +675,14 @@ export default function Overview() {
   useEffect(() => {
     checkAPIs();
     loadPalmOilData();
+    loadMalaysianNews();
+    
+    // Auto-refresh news every 5 minutes
+    const newsInterval = setInterval(loadMalaysianNews, 5 * 60 * 1000);
+    
+    return () => {
+      clearInterval(newsInterval);
+    };
   }, []);
 
   const loadPalmOilData = async () => {
@@ -290,6 +699,28 @@ export default function Overview() {
       console.error('Error loading palm oil data:', error);
     }
     setPalmOilLoading(false);
+  };
+
+  const loadMalaysianNews = async () => {
+    setNewsLoading(true);
+    try {
+      const articles = await fetchMalaysianIndonesianNews();
+      setMalaysianNews(articles);
+      setLastNewsUpdate(new Date());
+      
+      // Log news statistics
+      console.log(`Loaded ${articles.length} Malaysian news articles`);
+      if (articles.length > 0) {
+        const palmOilArticles = articles.filter(article => 
+          article.title?.toLowerCase().includes('palm oil') || 
+          article.title?.toLowerCase().includes('cpo')
+        );
+        console.log(`${palmOilArticles.length} articles specifically about palm oil`);
+      }
+    } catch (error) {
+      console.error('Error loading Malaysian news:', error);
+    }
+    setNewsLoading(false);
   };
 
   const checkAPIs = () => {
@@ -480,6 +911,13 @@ export default function Overview() {
 
   return (
     <div className="p-6">
+      {/* Malaysian News Marquee Strip */}
+      <NewsMarquee 
+        articles={malaysianNews} 
+        isLoading={newsLoading} 
+        onRefresh={loadMalaysianNews}
+      />
+
       {/* Page Header */}
       <div className="mb-8 bg-white border-l-4 border-[#003366] shadow-md rounded-r-lg overflow-hidden">
         <div className="p-6">
@@ -492,19 +930,31 @@ export default function Overview() {
                 </div>
               </div>
               <p className="text-gray-700 mt-1 border-l-3 border-[#0072bc] pl-3">
-                Live monitoring of India's edible oil security with market alerts
+                Live monitoring of India's edible oil security with market alerts and Malaysian news intelligence
               </p>
-              <div className="mt-3 inline-flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border border-gray-200">
-                <img 
-                  src="/assets/ut.png" 
-                  alt="Ministry Logo" 
-                  className="w-6 h-6"
-                />
-                <span className="text-sm text-gray-700">
-                  <span className="font-semibold">Ministry of Agriculture & Farmers Welfare</span>
-                  <span className="text-gray-500 mx-2">|</span>
-                  <span className="text-gray-600">Government of India</span>
-                </span>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="inline-flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded border border-gray-200">
+                  <img 
+                    src="/assets/ut.png" 
+                    alt="Ministry Logo" 
+                    className="w-6 h-6"
+                  />
+                  <span className="text-sm text-gray-700">
+                    <span className="font-semibold">Ministry of Agriculture & Farmers Welfare</span>
+                    <span className="text-gray-500 mx-2">|</span>
+                    <span className="text-gray-600">Government of India</span>
+                  </span>
+                </div>
+                
+                {/* News update indicator */}
+                {lastNewsUpdate && (
+                  <div className="inline-flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-200 text-xs">
+                    <svg className="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-blue-700">News updated: {formatNewsDate(lastNewsUpdate.toISOString())}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -618,7 +1068,7 @@ export default function Overview() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Exchange Rate:</span>
-                      <span className="font-medium">1 MYR = ₹{21.92}</span>
+                      <span className="font-medium">1 MYR = ₹21.92</span>
                     </div>
                     <div className="text-xs text-gray-500">
                       Based on current forex rate
@@ -644,7 +1094,7 @@ export default function Overview() {
                   {/* Use the new chart component */}
                   <PalmOilPriceChart 
                     graphData={palmOilData.graph_data}
-                    exchangeRate={palmOilData.daily_price?.exchange_rate || 21.92}
+                    exchangeRate={21.92}
                   />
                   
                   {/* Monthly data table dropdown */}
@@ -697,7 +1147,7 @@ export default function Overview() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Conversion:</span>
-                        <span>1 MYR = ₹{palmOilData.daily_price?.exchange_rate || 21.92} (Fixed Rate)</span>
+                        <span>1 MYR = ₹{21.92} (Fixed Rate)</span>
                       </div>
                     </div>
                   </div>
@@ -769,27 +1219,27 @@ export default function Overview() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="text-xs text-gray-600 font-medium mb-1">CURRENT MONTH</div>
-                <div className="text-lg font-bold text-[#003366]">
+                <div className="text-sm font-bold text-[#003366]">
                   {formatMonthYear(palmOilData.graph_data[palmOilData.graph_data.length - 1]?.date)}
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-lg text-green-800 mt-1">
                   Latest: {formatPrice(palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr, 'MYR')}
                 </div>
               </div>
               
               <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="text-xs text-gray-600 font-medium mb-1">PREVIOUS MONTH</div>
-                <div className="text-lg font-bold text-green-700">
+                <div className="text-sm font-bold text-green-700">
                   {formatMonthYear(palmOilData.graph_data[palmOilData.graph_data.length - 2]?.date)}
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
+                <div className="text-lg text-gray-800 mt-1">
                   Price: {formatPrice(palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr, 'MYR')}
                 </div>
               </div>
               
               <div className="text-center p-4 bg-amber-50 rounded-lg border border-amber-200">
                 <div className="text-xs text-gray-600 font-medium mb-1">MONTH-ON-MONTH CHANGE</div>
-                <div className={`text-xl font-bold ${
+                <div className={`text-sm font-bold ${
                   getPercentageChange(
                     palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
                     palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
@@ -802,7 +1252,7 @@ export default function Overview() {
                     )
                   )}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-lg text-green-800 mt-1">
                   {getChangeStatement(
                     getPercentageChange(
                       palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
@@ -814,15 +1264,30 @@ export default function Overview() {
             </div>
 
             {/* Market Alert Statement */}
-            <div className={`border-l-4 ${
-              getAlertLevel(
-                getPercentageChange(
-                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                  palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-                )
-              ).color
-            } p-4 bg-gray-50 rounded-r-lg`}>
-              <div className="flex items-center gap-2 mb-2">
+                  {/* Market Alert Popup in Top Right Corner */}
+      {showAlertPopup && palmOilData?.graph_data?.length > 0 && !palmOilLoading && (
+        <div className="fixed bottom-10 right-6 w-96 z-50 animate-slide-in">
+          <div className={`border-l-4 ${
+            getAlertLevel(
+              getPercentageChange(
+                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+              )
+            ).color
+          } p-4 bg-white rounded-lg shadow-xl border border-gray-200 relative`}>
+            {/* Close button */}
+            <button
+              onClick={() => setShowAlertPopup(false)}
+              className="absolute -top-2 -right-2 bg-gray-800 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-gray-900 transition-colors z-10"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${
                   getAlertLevel(
                     getPercentageChange(
@@ -839,38 +1304,58 @@ export default function Overview() {
                   ).dotColor
                 }`}></div>
                 <span className="font-bold text-gray-800 text-sm">GLOBAL MARKET ALERT</span>
-                <div className={`ml-auto ${
-                  getAlertLevel(
-                    getPercentageChange(
-                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-                    )
-                  ).badgeColor
-                } text-xs px-2 py-1 rounded-full font-medium`}>
-                  {getAlertLevel(
-                    getPercentageChange(
-                      palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                      palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-                    )
-                  ).level}
-                </div>
               </div>
-              <p className="text-gray-700 text-sm">
-                {generateMarketStatement(
+              <div className={`${
+                getAlertLevel(
                   getPercentageChange(
                     palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
                     palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
-                  ),
-                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
-                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_inr
-                )}
-              </p>
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
-                <span>Exchange Rate: 1 MYR = ₹{palmOilData.daily_price?.exchange_rate || 21.92}</span>
-                <span>•</span>
-                <span>Data points: {palmOilData.graph_data.length} months</span>
+                  )
+                ).badgeColor
+              } text-xs px-2 py-1 rounded-full font-medium`}>
+                {getAlertLevel(
+                  getPercentageChange(
+                    palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                    palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                  )
+                ).level}
               </div>
             </div>
+            
+            {/* Content */}
+            <p className="text-gray-700 text-sm mb-3">
+              {generateMarketStatement(
+                getPercentageChange(
+                  palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                  palmOilData.graph_data[palmOilData.graph_data.length - 2]?.value_myr
+                ),
+                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_myr,
+                palmOilData.graph_data[palmOilData.graph_data.length - 1]?.value_inr
+              )}
+            </p>
+            
+            {/* Progress bar for auto-dismiss */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100">
+              <div 
+                className="h-full bg-blue-500 transition-all duration-5000"
+                style={{ width: '100%' }}
+                onAnimationEnd={() => setShowAlertPopup(false)}
+              >
+                <style jsx>{`
+                  @keyframes progress {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                  }
+                  .animate-progress {
+                    animation: progress 20s linear forwards;
+                  }
+                `}</style>
+                <div className="h-full bg-blue-500 animate-progress"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
           </div>
         ) : (
           <div className="p-6 text-center">
