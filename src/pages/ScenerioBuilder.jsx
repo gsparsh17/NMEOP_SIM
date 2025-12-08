@@ -1,8 +1,4 @@
 import React, { useState, useMemo, useEffect } from "react";
-import PricesTab from "../components/charts/PriceCharts";
-import ImportsFXCharts from "../components/charts/ImportsFXCharts";
-import FiscalImpactChart from "../components/charts/FiscalImpactChart";
-import TabPill from "../components/cards/TabPill";
 import { 
   liveMarket, 
   ffbPriceTrend, 
@@ -30,6 +26,16 @@ export default function ScenarioBuilder() {
   const [plantationAge, setPlantationAge] = useState(7);
   const [selectedState, setSelectedState] = useState("Telangana");
   
+  // Multi-Year Simulation State
+  const [inflationRate, setInflationRate] = useState(5.0); // percentage
+  const [supplyChainCost, setSupplyChainCost] = useState(14.0);
+  const [supplyChainInflationRate, setSupplyChainInflationRate] = useState(5.0);
+  const [safeLandedThreshold, setSafeLandedThreshold] = useState(110.0);
+  const [retailPriceThreshold, setRetailPriceThreshold] = useState(161.0);
+  const [simulationYears, setSimulationYears] = useState(5);
+  const [startYear, setStartYear] = useState(2025);
+  const [multiYearResults, setMultiYearResults] = useState(null);
+  
   // Manual Input State
   const [spotPrice, setSpotPrice] = useState("");
   const [useCurrentSpot, setUseCurrentSpot] = useState(true);
@@ -38,6 +44,7 @@ export default function ScenarioBuilder() {
   const [apiResult, setApiResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
   // Report UI State
   const [showReport, setShowReport] = useState(false);
   const [reportHtml, setReportHtml] = useState("");
@@ -86,6 +93,59 @@ export default function ScenarioBuilder() {
       const errorMsg = err.message.includes("Model not loaded") 
         ? "AI Model not available. Please use Manual Input mode."
         : "Failed to fetch simulation data. Please check connection.";
+      setError(errorMsg);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Multi-Year Simulation API Call
+  const fetchMultiYearSimulation = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const requestBody = {
+        month_name: seasonalMonth,
+        start_year: startYear,
+        years: simulationYears,
+        bcd: duty,
+        cess: cess,
+        inflation_rate: inflationRate / 100, // Convert percentage to decimal
+        supply_chain_base: supplyChainCost,
+        supply_chain_inflation_rate: supplyChainInflationRate / 100,
+        safe_landed_threshold: safeLandedThreshold,
+        retail_price_threshold: retailPriceThreshold
+      };
+      
+      // Add spot_price if in manual mode
+      if (activeMode === "manual" && spotPrice) {
+        requestBody.spot_price = parseFloat(spotPrice);
+      }
+      
+      const response = await fetch("http://localhost:5000/tariff-simulation-inflation-costpush", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(requestBody),
+        mode: 'cors'
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Request Failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Multi-year API Response:", data);
+      setMultiYearResults(data);
+      return data;
+    } catch (err) {
+      console.error("Multi-year Simulation Error:", err);
+      const errorMsg = err.message.includes("Model not loaded") 
+        ? "AI Model not available. Please use Manual Input mode."
+        : "Failed to fetch multi-year simulation data. Please check connection.";
       setError(errorMsg);
       return null;
     } finally {
@@ -280,19 +340,12 @@ export default function ScenarioBuilder() {
       'Landed Cost (₹/kg)': results.landedCost,
       'Retail Price (₹/kg)': results.retailPrice,
       'Effective Duty (%)': results.effectiveDuty,
-      // 'Import Volume (M MT)': results.importVolume,
-      // 'Farmer Price (₹/MT FFB)': results.farmerPrice,
-      // 'VGP Fiscal Cost (₹ Cr)': results.fiscalCost,
-      // 'State Self-Sufficiency (%)': results.selfSufficiency,
-      // 'National Self-Sufficiency (%)': results.nationalSelfSufficiency,
-      // 'State Production (M MT)': results.stateProduction,
-      // 'OER (%)': results.oer,
       'Risk Flag': results.riskFlag,
     });
 
     const rowsHtml = rows.map(([k, v]) => `<tr><td style="padding:6px;border:1px solid #ddd">${k}</td><td style="padding:6px;border:1px solid #ddd">${v ?? '-'}</td></tr>`).join('');
 
-    return `<!doctype html>
+    let html = `<!doctype html>
       <html>
         <head>
           <meta charset="utf-8" />
@@ -331,13 +384,56 @@ export default function ScenarioBuilder() {
           <div class="section-title">Simulation Results</div>
           <table>
             ${rowsHtml}
-          </table>
+          </table>`;
 
+    // Add multi-year results section if available
+    if (multiYearResults) {
+      html += `
+        <div class="section-title">Multi-Year Projections</div>
+        <table>
+          <tr>
+            <th>Year</th>
+            <th>CIF Price</th>
+            <th>Landed Cost</th>
+            <th>Retail Price</th>
+            <th>Farmer Risk</th>
+            <th>Consumer Risk</th>
+          </tr>`;
+      
+      multiYearResults.projections?.forEach(proj => {
+        html += `
+          <tr>
+            <td>${proj.year}</td>
+            <td>₹${proj.scenario_cif_price_used?.toFixed(2) || '-'}</td>
+            <td>₹${proj.landed_cost?.toFixed(2) || '-'}</td>
+            <td>₹${proj.estimated_retail_price?.toFixed(2) || '-'}</td>
+            <td>${proj.farmer_at_risk ? '⚠️ At Risk' : '✅ Safe'}</td>
+            <td>${proj.consumer_at_risk ? '⚠️ At Risk' : '✅ Safe'}</td>
+          </tr>`;
+      });
+      
+      html += `</table>`;
+      
+      // Add summary
+      if (multiYearResults.summary) {
+        html += `
+          <div class="section-title">Multi-Year Summary</div>
+          <table>
+            <tr><td>Sustainability Period</td><td>${multiYearResults.summary.sustainability_years} years</td></tr>
+            <tr><td>Overall Risk Status</td><td>${multiYearResults.summary.overall_risk_label}</td></tr>
+            <tr><td>First Risk Year</td><td>${multiYearResults.summary.first_risk_year || 'None'}</td></tr>
+          </table>`;
+      }
+    }
+
+    html += `
           <div style="margin-top:18px;font-size:13px;color:#374151">
             <strong>Notes:</strong> This report summarizes the latest simulation output from the Tariff Strategy Builder. Values marked '-' were not available from the API.
           </div>
         </body>
       </html>`;
+
+    return html;
   };
 
   const generateReport = () => {
@@ -606,6 +702,145 @@ export default function ScenarioBuilder() {
     fetchSimulation(true, spotPrice);
   };
 
+  // Multi-Year Results Display Component
+  const MultiYearResultsDisplay = () => {
+    if (!multiYearResults) return null;
+    
+    const { summary, projections } = multiYearResults;
+    
+    return (
+      <div className="mt-5 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-bold">Multi-Year Simulation Results</h4>
+              <p className="text-sm opacity-90">
+                {simulationYears}-Year Projection ({startYear}-{startYear + simulationYears - 1})
+              </p>
+            </div>
+            <div className="text-xs px-2 py-1 bg-white/20 rounded">
+              INFLATION-ADJUSTED
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          {/* Summary Section */}
+          {summary && (
+            <div className={`mb-6 p-4 rounded-lg border ${
+              summary.risk_before_horizon ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
+            }`}>
+              <div className="font-semibold mb-2">
+                {summary.overall_risk_label}
+              </div>
+              <div className="text-sm space-y-2">
+                <div>
+                  <strong>Sustainability:</strong> {summary.sustainability_years} years
+                  {summary.sustain_until_year && ` (until ${summary.sustain_until_year})`}
+                </div>
+                {summary.first_risk_year && (
+                  <div>
+                    <strong>First Risk Year:</strong> {summary.first_risk_year} ({summary.first_risk_who})
+                  </div>
+                )}
+                {summary.thresholds_breached && summary.thresholds_breached.length > 0 && (
+                  <div>
+                    <strong>Breached Thresholds:</strong>
+                    <ul className="mt-1 ml-4 list-disc">
+                      {summary.thresholds_breached.map((threshold, idx) => (
+                        <li key={idx}>{threshold.type}: {threshold.rule} (Threshold: ₹{threshold.threshold_value})</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Projections Table */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CIF Price</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Landed Cost</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Retail Price</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Farmer Risk</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Consumer Risk</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {projections?.map((projection, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">{projection.year}</div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">₹{projection.scenario_cif_price_used?.toFixed(2) || '0.00'}</div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className={`font-medium ${
+                        projection.farmer_at_risk ? "text-red-600" : "text-green-600"
+                      }`}>
+                        ₹{projection.landed_cost?.toFixed(2) || '0.00'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className={`font-medium ${
+                        projection.consumer_at_risk ? "text-red-600" : "text-green-600"
+                      }`}>
+                        ₹{projection.estimated_retail_price?.toFixed(2) || '0.00'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        projection.farmer_at_risk 
+                          ? "bg-red-100 text-red-800" 
+                          : "bg-green-100 text-green-800"
+                      }`}>
+                        {projection.farmer_at_risk ? "At Risk" : "Safe"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        projection.consumer_at_risk 
+                          ? "bg-red-100 text-red-800" 
+                          : "bg-green-100 text-green-800"
+                      }`}>
+                        {projection.consumer_at_risk ? "At Risk" : "Safe"}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Duty Recommendations */}
+          {summary?.duty_change_events && summary.duty_change_events.length > 0 && (
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="font-semibold text-yellow-800 mb-2">Duty Change Recommendations</div>
+              <div className="text-sm space-y-3">
+                {summary.duty_change_events.map((event, idx) => (
+                  <div key={idx} className="p-3 bg-white border border-yellow-300 rounded">
+                    <div className="font-medium">Year {event.year}: {event.reason?.replace(/_/g, ' ')}</div>
+                    {event.recommendation && (
+                      <div className="mt-1 text-xs">
+                        <div>Suggested BCD: {event.recommendation.suggested_bcd?.toFixed(1)}%</div>
+                        <div>Suggested Cess: {event.recommendation.suggested_cess?.toFixed(1)}%</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       {/* Page Header - Blue Header */}
@@ -695,14 +930,6 @@ export default function ScenarioBuilder() {
           </div>
           
           <div className="p-6">
-            {/* State Selection */}
-            {/* <SelectInput
-              label="State Analysis"
-              state={selectedState}
-              setState={setSelectedState}
-              options={Object.keys(stateWiseData).filter(state => state !== "All-India")}
-            /> */}
-
             {/* Mode-specific controls */}
             {activeMode === "manual" && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -812,7 +1039,7 @@ export default function ScenarioBuilder() {
             )}
 
             {/* API Status Panel */}
-            <div className={`mt-4 p-3 rounded-lg border ${
+            {/* <div className={`mt-4 p-3 rounded-lg border ${
               activeMode === "ai" 
                 ? "bg-blue-50 border-blue-200" 
                 : "bg-amber-50 border-amber-200"
@@ -864,17 +1091,17 @@ export default function ScenarioBuilder() {
                     Risk Status:
                   </span>
                   <span className={`font-bold ${
-                    simulationResults.riskFlag.includes("Safe") || simulationResults.riskFlag.includes("High") 
+                    simulationResults.riskFlag?.includes("Safe") || simulationResults.riskFlag?.includes("High") 
                       ? "text-green-600" 
                       : "text-red-600"
                   }`}>
-                    {simulationResults.riskFlag.includes("Safe") || simulationResults.riskFlag.includes("High") 
+                    {simulationResults.riskFlag?.includes("Safe") || simulationResults.riskFlag?.includes("High") 
                       ? "Farmer Safe" 
                       : "Risk"}
                   </span>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Price Source Info */}
             {apiResult && (
@@ -917,6 +1144,7 @@ export default function ScenarioBuilder() {
                   {loading ? "Calculating..." : "Calculate with Manual Price"}
                 </button>
               )}
+              <div className="mb-6 p-4"></div>
               
               {/* <button className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Save Scenario
@@ -925,6 +1153,98 @@ export default function ScenarioBuilder() {
               {/* <button className="w-full border border-dashed border-gray-300 text-gray-600 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                 Compare with Baseline
               </button> */}
+              {/* Multi-Year Controls */}
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="font-semibold text-blue-800 mb-3">Multi-Year Simulation Parameters</div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Year
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded-lg border border-gray-300 p-2"
+                    value={startYear}
+                    onChange={(e) => setStartYear(parseInt(e.target.value))}
+                    min="2023"
+                    max="2030"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Simulation Years
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full rounded-lg border border-gray-300 p-2"
+                    value={simulationYears}
+                    onChange={(e) => setSimulationYears(parseInt(e.target.value))}
+                    min="1"
+                    max="10"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <ControlSlider
+                  label="Inflation Rate (%)"
+                  value={inflationRate}
+                  min={0}
+                  max={20}
+                  setValue={setInflationRate}
+                  explanation="Annual inflation rate for CIF prices"
+                />
+                
+                <ControlSlider
+                  label="Supply Chain Inflation (%)"
+                  value={supplyChainInflationRate}
+                  min={0}
+                  max={20}
+                  setValue={setSupplyChainInflationRate}
+                  explanation="Annual inflation for supply chain costs"
+                />
+              </div>
+              
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Safe Landed Threshold (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full rounded-lg border border-gray-300 p-2"
+                    value={safeLandedThreshold}
+                    onChange={(e) => setSafeLandedThreshold(parseFloat(e.target.value))}
+                  />
+                  <div className="text-xs text-gray-500 mt-1">Minimum landed cost to protect farmers</div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Retail Price Ceiling (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="w-full rounded-lg border border-gray-300 p-2"
+                    value={retailPriceThreshold}
+                    onChange={(e) => setRetailPriceThreshold(parseFloat(e.target.value))}
+                  />
+                  <div className="text-xs text-gray-500 mt-1">Maximum retail price for consumers</div>
+                </div>
+              </div>
+              
+              <button
+                onClick={fetchMultiYearSimulation}
+                disabled={loading}
+                className="mt-4 w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? "Running Multi-Year Simulation..." : "Run Multi-Year Simulation"}
+              </button>
+            </div>
             </div>
           </div>
         </div>
@@ -1068,52 +1388,6 @@ export default function ScenarioBuilder() {
                               <div className="text-sm text-gray-600">Trade policy impact</div>
                             </td>
                           </tr>
-                          
-                          {/* Farmer Price Row */}
-                          {/* <tr className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="w-3 h-3 bg-teal-500 rounded-full mr-3"></div>
-                                <div className="font-medium text-gray-900">Farmer Price</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-lg font-bold text-teal-600">₹{simulationResults.farmerPrice.toLocaleString()}</div>
-                              <div className="text-xs text-gray-500">FFB per MT</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-600">Based on duty impact</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-600">Farmer income impact</div>
-                            </td>
-                          </tr> */}
-                          
-                          {/* Fiscal Cost Row */}
-                          {/* <tr className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="w-3 h-3 bg-indigo-500 rounded-full mr-3"></div>
-                                <div className="font-medium text-gray-900">VGP Fiscal Cost</div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-lg font-bold text-indigo-600">₹{simulationResults.fiscalCost}</div>
-                              <div className="text-xs text-gray-500">Annual Viability Gap</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className={`text-sm ${
-                                parseFloat(simulationResults.fiscalCost) > 100 ? "text-red-600" : 
-                                parseFloat(simulationResults.fiscalCost) > 50 ? "text-amber-600" : "text-green-600"
-                              }`}>
-                                {parseFloat(simulationResults.fiscalCost) > 100 ? "High cost" : 
-                                 parseFloat(simulationResults.fiscalCost) > 50 ? "Moderate cost" : "Low cost"}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-600">Government expenditure</div>
-                            </td>
-                          </tr> */}
                         </tbody>
                       </table>
                     </div>
@@ -1143,98 +1417,9 @@ export default function ScenarioBuilder() {
                 </div>
               )}
 
-              {/* Enhanced Quick Results Summary */}
-              {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-                <div className={`p-4 ${
-                  activeMode === "ai" 
-                    ? "bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200" 
-                    : "bg-gradient-to-r from-blue-50 to-blue-100 border-b border-amber-200"
-                }`}>
-                  <h4 className="font-bold text-gray-800">
-                    {activeMode === "ai" ? "🤖 AI Simulation Results" : "✏️ Manual Calculation Results"}
-                  </h4>
-                  <p className="text-sm text-gray-600">Key metrics from current scenario</p>
-                </div>
-                <div className="p-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="text-2xl font-bold text-[#1e5c2a]">₹{simulationResults.retailPrice}</div>
-                      <div className="text-xs text-gray-600">Retail Price</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="text-2xl font-bold text-[#1e5c2a]">{simulationResults.selfSufficiency}%</div>
-                      <div className="text-xs text-gray-600">State Self-Sufficiency</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="text-2xl font-bold text-[#1e5c2a]">₹{simulationResults.farmerPrice.toLocaleString()}</div>
-                      <div className="text-xs text-gray-600">Farmer Price</div>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="text-2xl font-bold text-[#1e5c2a]">₹{simulationResults.fiscalCost}Cr</div>
-                      <div className="text-xs text-gray-600">VGP Cost</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                    <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="text-lg font-bold text-blue-700">₹{simulationResults.cifPrice}</div>
-                      <div className="text-xs text-blue-600">CIF Price Used</div>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="text-lg font-bold text-green-700">{simulationResults.effectiveDuty}%</div>
-                      <div className="text-xs text-green-600">Effective Duty</div>
-                    </div>
-                    <div className="text-center p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                      <div className="text-lg font-bold text-purple-700">{simulationResults.importVolume}M MT</div>
-                      <div className="text-xs text-purple-600">Import Volume</div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
+              {/* Multi-Year Results Display */}
+              <MultiYearResultsDisplay />
 
-              {/* Enhanced Policy Recommendation */}
-              {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className={`p-4 ${
-                  activeMode === "ai" 
-                    ? "bg-gradient-to-r from-[#0072bc] to-[#00509e]" 
-                    : "bg-gradient-to-r from-[#0072bc] to-[#00509e]"
-                } text-white`}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-white rounded-full"></div>
-                    <h3 className="text-lg font-bold">
-                      {selectedState} {activeMode === "ai" ? "AI" : "Manual"} Policy Recommendation
-                    </h3>
-                    <div className="ml-auto bg-white/20 px-2 py-1 rounded text-xs">
-                      {activeMode === "ai" ? "AI-POWERED ANALYSIS" : "MANUAL ANALYSIS"}
-                    </div>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-3 text-sm text-gray-700">
-                    {recommendation.map((line, idx) => (
-                      <p key={idx}>• {line}</p>
-                    ))}
-                  </div>
-                  <div className={`mt-4 p-4 rounded-lg border ${
-                    activeMode === "ai" 
-                      ? "bg-blue-50 border-blue-200" 
-                      : "bg-amber-50 border-amber-200"
-                  }`}>
-                    <div className={`font-medium mb-1 ${
-                      activeMode === "ai" ? "text-blue-900" : "text-amber-900"
-                    }`}>
-                      Suggested Action for {selectedState}
-                    </div>
-                    <div className={`text-sm ${
-                      activeMode === "ai" ? "text-blue-800" : "text-amber-800"
-                    }`}>
-                      {duty >= 15 ? "Consider reducing duty to balance consumer impact while maintaining farmer support through targeted VGP." :
-                       duty <= 5 ? "Consider increasing duty to better protect domestic farmers, especially during peak production season." :
-                       "Maintain current duty level with close monitoring of global prices and domestic production trends."}
-                      {currentStateData.coveragePercentage < 50 && " Focus on area expansion to utilize untapped potential."}
-                    </div>
-                  </div>
-                </div> */}
-              {/* </div> */}
             </div>
           </div>
         </div>
@@ -1246,10 +1431,6 @@ export default function ScenarioBuilder() {
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowReport(false)} />
           <div className="relative bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-auto p-6 z-10">
             <div className="flex items-start justify-end mb-4">
-              {/* <div>
-                <div className="text-lg font-bold">{MINISTRY_NAME}</div>
-                <div className="text-sm text-gray-600">Tariff Strategy Report — {selectedState}</div>
-              </div> */}
               <div className="flex gap-2">
                 <button onClick={downloadReport} className="px-3 py-1 bg-[#003366] text-white rounded">Download</button>
                 <button onClick={openReportInNewWindow} className="px-3 py-1 border rounded">Open</button>
@@ -1261,232 +1442,6 @@ export default function ScenarioBuilder() {
         </div>
       )}
 
-    </div>
-  );
-}
-
-// Enhanced Seasonal Analysis Component - with headers
-function SeasonalAnalysis({ seasonalPattern, currentMonth, seasonAnalysis, bearingPotential, currentAge }) {
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  
-  return (
-    <div className="space-y-6">
-      {/* Price Seasonality Chart - Blue Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <h4 className="font-bold">FFB Price Seasonality Pattern</h4>
-          <p className="text-sm opacity-90">Telangana Historical Data Analysis</p>
-        </div>
-        <div className="p-6">
-          <div className="h-64">
-            <div className="flex items-end justify-between h-48 gap-1">
-              {months.map(month => (
-                <div key={month} className="flex-1 flex flex-col items-center">
-                  <div 
-                    className={`w-full rounded-t ${
-                      month === currentMonth 
-                        ? 'bg-[#1e5c2a]' 
-                        : month === seasonAnalysis.peakMonth 
-                          ? 'bg-green-500' 
-                          : month === seasonAnalysis.leanMonth 
-                            ? 'bg-amber-500' 
-                            : 'bg-blue-500'
-                    }`}
-                    style={{ 
-                      height: `${((seasonalPattern[month] || 15000) - 12000) / 8000 * 100}%`,
-                      minHeight: '20px'
-                    }}
-                  ></div>
-                  <div className="text-xs text-gray-600 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
-                    {month.slice(0, 3)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
-              <span>Lean: {seasonAnalysis.leanMonth} (₹{seasonAnalysis.minPrice?.toLocaleString()})</span>
-              <span>Current: {currentMonth} (₹{seasonalPattern[currentMonth]?.toLocaleString()})</span>
-              <span>Peak: {seasonAnalysis.peakMonth} (₹{seasonAnalysis.maxPrice?.toLocaleString()})</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Plantation Yield by Age - Plain Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h4 className="font-bold text-gray-800">Plantation Yield by Age</h4>
-          <p className="text-sm text-gray-600">Yield progression over plantation lifecycle</p>
-        </div>
-        <div className="p-6">
-          <div className="h-48">
-            <div className="flex items-end justify-between h-32 gap-2">
-              {bearingPotential.map(age => (
-                <div key={age.age} className="flex-1 flex flex-col items-center">
-                  <div 
-                    className={`w-full rounded-t ${
-                      age.age === currentAge ? 'bg-[#1e5c2a]' : 'bg-green-400'
-                    }`}
-                    style={{ 
-                      height: `${(age.yield / 18) * 100}%`,
-                      minHeight: '20px'
-                    }}
-                  ></div>
-                  <div className="text-xs text-gray-600 mt-1">Year {age.age}</div>
-                  <div className="text-xs font-medium">{age.yield} MT</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Seasonal Strategy Guide - Blue Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <h4 className="font-bold">Seasonal Strategy Guide</h4>
-          <p className="text-sm opacity-90">Policy recommendations by season</p>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="font-medium text-green-800">Peak Season ({seasonAnalysis.peakMonth})</div>
-              <ul className="text-green-700 text-xs mt-2 space-y-1">
-                <li>• Higher domestic production</li>
-                <li>• Consider protective duties</li>
-                <li>• Monitor farmer prices</li>
-                <li>• Build buffer stocks</li>
-              </ul>
-            </div>
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="font-medium text-amber-800">Lean Season ({seasonAnalysis.leanMonth})</div>
-              <ul className="text-amber-700 text-xs mt-2 space-y-1">
-                <li>• Lower domestic production</li>
-                <li>• Consider lower duties</li>
-                <li>• Ensure supply adequacy</li>
-                <li>• Control consumer prices</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// State Capacity Analysis Component - with alternating headers
-function StateCapacityAnalysis({ stateData, selectedState, simulationData }) {
-  return (
-    <div className="space-y-6">
-      {/* First row: Blue Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-bold">{selectedState} - Area Coverage Progress</h4>
-              <p className="text-sm opacity-90">NMEO-OP Mission Targets</p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold">{stateData.coveragePercentage}%</div>
-              <div className="text-xs opacity-90">Coverage Achieved</div>
-            </div>
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600">Area Covered</span>
-                <span className="font-medium">{stateData.areaCovered?.toLocaleString()} ha</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="h-3 rounded-full bg-green-500 transition-all duration-300"
-                  style={{ width: `${stateData.coveragePercentage}%` }}
-                ></div>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {stateData.coveragePercentage}% of {stateData.potentialArea?.toLocaleString()} ha potential
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Second row: Plain Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h4 className="font-bold text-gray-800">Processing Capacity</h4>
-          <p className="text-sm text-gray-600">Infrastructure & Extraction Efficiency</p>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <span className="text-sm text-gray-600">Processing Mills</span>
-                <span className="font-bold text-gray-800">{stateData.processingMills || 0}</span>
-              </div>
-              {stateData.crushingCapacity && (
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <span className="text-sm text-gray-600">Crushing Capacity</span>
-                  <span className="font-bold text-gray-800">{stateData.crushingCapacity} MT/hr</span>
-                </div>
-              )}
-            </div>
-            <div className="space-y-3">
-              {stateData.OER && (
-                <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-700">{stateData.OER}%</div>
-                  <div className="text-xs text-blue-600 mt-1">Oil Extraction Rate</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Third row: Blue Header */}
-      {stateData.areaExpansionTargets && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-            <h4 className="font-bold">NMEO-OP Expansion Targets</h4>
-            <p className="text-sm opacity-90">Annual targets (2021-22 to 2025-26)</p>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-5 gap-2">
-              {stateData.areaExpansionTargets.map((target, index) => (
-                <div key={index} className="text-center p-3 bg-green-50 border border-green-200 rounded">
-                  <div className="text-xs text-gray-600">202{1+index}-2{2+index}</div>
-                  <div className="font-bold text-green-700 mt-1">{target.toLocaleString()} ha</div>
-                </div>
-              ))}
-            </div>
-            <div className="text-center mt-4 text-sm text-gray-600">
-              Total Target: <span className="font-bold">{stateData.totalExpansionTarget?.toLocaleString()} ha</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Fourth row: Plain Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 bg-gray-50 p-4">
-          <h4 className="font-bold text-gray-800">Production Potential</h4>
-          <p className="text-sm text-gray-600">Current capacity & future outlook</p>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="text-xl font-bold text-blue-700">{simulationData.stateProduction}M MT</div>
-              <div className="text-sm text-blue-600">Current FFB Production</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="text-xl font-bold text-green-700">{simulationData.selfSufficiency}%</div>
-              <div className="text-sm text-green-600">State Self-Sufficiency</div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -1545,26 +1500,6 @@ function SelectInput({ label, state, setState, options }) {
           <option key={o} value={o}>{o}</option>
         ))}
       </select>
-    </div>
-  );
-}
-
-function ToggleSwitch({ label, value, setValue }) {
-  return (
-    <div className="mb-6 flex justify-between items-center">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
-      <button
-        onClick={() => setValue((v) => !v)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          value ? "bg-[#1e5c2a]" : "bg-gray-300"
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            value ? "translate-x-6" : "translate-x-1"
-          }`}
-        />
-      </button>
     </div>
   );
 }

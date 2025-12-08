@@ -25,7 +25,7 @@ import PalmOilPriceChart from "../components/charts/PalmOilPriceChart";
 import { useNavigate } from "react-router-dom";
 
 // NewsAPI.org Configuration
-const NEWSAPI_KEY = "522b468b39d449b1b1a31de1e5b642e2";
+const NEWSAPI_KEY = "3a594c659a2245c18de3c8a6d4ea4143";
 const NEWSAPI_BASE_URL = "https://newsapi.org/v2";
 
 // Fetch Malaysian news from NewsAPI
@@ -1357,7 +1357,7 @@ export default function Overview() {
                     to { width: 0%; }
                   }
                   .animate-progress {
-                    animation: progress 20s linear forwards;
+                    animation: progress 1200s linear forwards;
                   }
                 `}</style>
                 <div className="h-full bg-blue-500 animate-progress"></div>
