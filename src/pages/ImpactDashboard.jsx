@@ -202,8 +202,8 @@ const getMonthName = (monthNum) => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated || isAuthenticated !== 'true') {
+    const isAuthenticated = localStorage.getItem('access_token');
+    if (!isAuthenticated) {
       navigate('/login');
     }
   }, [navigate]);
