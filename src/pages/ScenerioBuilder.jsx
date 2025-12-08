@@ -266,17 +266,17 @@ export default function ScenarioBuilder() {
     const status = apiResult && !error ? 'Connected' : error ? 'Error' : 'Not Connected';
 
     const rows = Object.entries({
-      'CIF Price (₹/MT)': results.cifPrice,
+      'CIF Price (₹/kg)': results.cifPrice,
       'Landed Cost (₹/kg)': results.landedCost,
       'Retail Price (₹/kg)': results.retailPrice,
       'Effective Duty (%)': results.effectiveDuty,
-      'Import Volume (M MT)': results.importVolume,
-      'Farmer Price (₹/MT FFB)': results.farmerPrice,
-      'VGP Fiscal Cost (₹ Cr)': results.fiscalCost,
-      'State Self-Sufficiency (%)': results.selfSufficiency,
-      'National Self-Sufficiency (%)': results.nationalSelfSufficiency,
-      'State Production (M MT)': results.stateProduction,
-      'OER (%)': results.oer,
+      // 'Import Volume (M MT)': results.importVolume,
+      // 'Farmer Price (₹/MT FFB)': results.farmerPrice,
+      // 'VGP Fiscal Cost (₹ Cr)': results.fiscalCost,
+      // 'State Self-Sufficiency (%)': results.selfSufficiency,
+      // 'National Self-Sufficiency (%)': results.nationalSelfSufficiency,
+      // 'State Production (M MT)': results.stateProduction,
+      // 'OER (%)': results.oer,
       'Risk Flag': results.riskFlag,
     });
 
@@ -666,7 +666,7 @@ export default function ScenarioBuilder() {
             {apiResult && !loading && (
               <div className="text-right hidden md:block">
                 <div className="text-xs text-gray-500 uppercase tracking-wide">Predicted Retail Price</div>
-                <div className="text-3xl font-bold text-[#003366]">₹{simulationResults.retailPrice}</div>
+                <div className="text-3xl font-bold text-[#003366]">₹{simulationResults.retailPrice}/Kg</div>
                 <div className="text-sm text-gray-600 mt-1">
                   {simulationResults.cifSource === "user_input_spot_price" ? "Manual Input" : "AI Prediction"}
                 </div>
@@ -716,7 +716,7 @@ export default function ScenarioBuilder() {
                 
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CPO Spot Price (₹/MT)
+                    CPO Spot Price (₹/kg)
                   </label>
                   <input
                     type="number"

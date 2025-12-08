@@ -512,7 +512,7 @@ export default function Overview() {
       </div>
 
       {/* Palm Oil Commodity Data Section */}
-      {/* <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -549,9 +549,9 @@ export default function Overview() {
               )}
             </button>
           </div>
-        </div> */}
+        </div>
 
-        {/* <div className="p-6">
+        <div className="p-6">
           {palmOilLoading ? (
             <div className="flex justify-center items-center py-12">
               <div className="text-center">
@@ -563,11 +563,11 @@ export default function Overview() {
               </div>
             </div>
           ) : palmOilData ? (
-            <> */}
+            <>
               {/* Currency Price Cards */}
-              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"> */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Malaysian Ringgit (MYR) Card */}
-                {/* <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100">
+                <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-6 border border-blue-100">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <div className="text-sm text-gray-600 font-medium">CURRENT PRICE (MYR)</div>
@@ -598,10 +598,10 @@ export default function Overview() {
                   <div className="mt-2 text-xs text-gray-500">
                     Bursa Malaysia Derivatives
                   </div>
-                </div> */}
+                </div>
 
                 {/* Indian Rupee (INR) Card */}
-                {/* <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 border border-green-100">
+                <div className="bg-gradient-to-br from-green-50 to-white rounded-xl p-6 border border-green-100">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <div className="text-sm text-gray-600 font-medium">CONVERTED PRICE (INR)</div>
@@ -625,14 +625,14 @@ export default function Overview() {
                     </div>
                   </div>
                 </div>
-              </div> */}
+              </div>
 
               {/* Graph Data Section */}
-              {/* {palmOilData?.graph_data && palmOilData.graph_data.length > 0 && (
+              {palmOilData?.graph_data && palmOilData.graph_data.length > 0 && (
                 <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h4 className="text-lg font-bold text-gray-800">1-Year Price Trend (MYR & INR)</h4>
+                      <h4 className="text-lg font-bold text-gray-800">5-Year Price Trend (MYR & INR)</h4>
                       <p className="text-sm text-gray-600">Historical price movement with currency conversion</p>
                     </div>
                     <div className="text-right">
@@ -640,15 +640,15 @@ export default function Overview() {
                       <div className="text-lg font-bold text-[#003366]">{palmOilData.graph_data.length}</div>
                     </div>
                   </div>
-                   */}
+                  
                   {/* Use the new chart component */}
-                  {/* <PalmOilPriceChart 
+                  <PalmOilPriceChart 
                     graphData={palmOilData.graph_data}
                     exchangeRate={palmOilData.daily_price?.exchange_rate || 21.77}
                   />
-                   */}
+                  
                   {/* Monthly data table dropdown */}
-                  {/* <div className="mt-6">
+                  <div className="mt-6">
                     <button
                       onClick={() => setShowMonthlyTable(!showMonthlyTable)}
                       className="flex items-center justify-between w-full px-4 py-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors"
@@ -672,10 +672,10 @@ export default function Overview() {
                     )}
                   </div>
                 </div>
-              )} */}
+              )}
 
               {/* Data Source Info */}
-              {/* <div className="mb-6 bg-white rounded-lg p-4 border border-gray-200">
+              <div className="mb-6 bg-white rounded-lg p-4 border border-gray-200">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-sm font-medium text-gray-700 mb-1">Data Source Information</div>
@@ -732,7 +732,7 @@ export default function Overview() {
             </div>
           )}
         </div>
-      </div> */}
+      </div>
 
       {/* Alert Strips */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
