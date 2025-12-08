@@ -1,32 +1,22 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
   STATES,
-  YEARS,
   MONTHS,
-  OIL_YEARS,
   stateWiseData,
   telanganaPriceData,
   getPriceData,
   getProductionData,
-  vpFpVgpData,
-  areaProductionData,
-  nmeoOpProgress,
-  clusterStatus,
-  farmerRisk,
-  missionAlignmentData,
   ffbPriceTrend,
   cpoPriceTrend,
   nmeoOPDetailedData
 } from "../data/staticData";
-import VPFPVGPChart from "../components/charts/VPFPVGPChart";
-import AreaProductionChart from "../components/charts/AreaProductionChart";
 import PriceTrendChart from "../components/charts/PriceTrendChart";
 import NMEOProgressChart from "../components/charts/NMEOProgressChart";
 import StateTargetsTable from "../components/charts/StateTargetsTable";
 import HistoricalExpansionChart from "../components/charts/HistoricalExpansionChart";
-import StabilityCard from "../components/cards/StabilityCard";
 import { useNavigate } from "react-router-dom";
 import IndiaOilPalmMapOSM from '../components/charts/IndiaOilPalmMapOSM';
+import OilPalmExpansionSimulator from "./OilPalmExpansionSimulator";
 
 export default function ImpactDashboard() {
   const [stateFilter, setStateFilter] = useState("All-India");
@@ -372,7 +362,8 @@ const getMonthName = (monthNum) => {
         </div>
       </div>
 
-      {/* Enhanced Filters - Blue Header */}
+<OilPalmExpansionSimulator selectedState={stateFilter} />
+
 <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden relative z-10">
   <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
     <div className="flex items-center justify-between">
@@ -406,21 +397,6 @@ const getMonthName = (monthNum) => {
       selectedState={stateFilter}
       showDistricts={showDistricts}
     />
-    
-    <div className="mt-4 text-sm text-gray-600 grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="p-3 bg-blue-50 rounded border border-blue-200">
-        <div className="font-medium text-blue-700">Interactive Map</div>
-        <div>Click on states to view details. Hover over districts for names.</div>
-      </div>
-      <div className="p-3 bg-green-50 rounded border border-green-200">
-        <div className="font-medium text-green-700">Real District Data</div>
-        <div>Showing actual district names from NMEO-OP report data.</div>
-      </div>
-      <div className="p-3 bg-orange-50 rounded border border-orange-200">
-        <div className="font-medium text-orange-700">100% Free</div>
-        <div>OpenStreetMap with no API keys or usage limits.</div>
-      </div>
-    </div>
   </div>
 </div>
       
