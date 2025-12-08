@@ -44,11 +44,9 @@ export default function App() {
           const currentTime = new Date();
           const hoursDiff = Math.abs(currentTime - sessionTime) / 36e5;
           
-          if (hoursDiff < 8) { // 8 hour session
+          if (hoursDiff < 8) { 
             setUser(session);
             setIsAuthenticated(true);
-            
-            // Set auto-logout timer
             const timeoutHours = 8 - hoursDiff;
             const timeoutMs = timeoutHours * 60 * 60 * 1000;
             
@@ -68,8 +66,6 @@ export default function App() {
     };
     
     checkAuth();
-    
-    // Cleanup on unmount
     return () => {
       if (sessionTimeout) clearTimeout(sessionTimeout);
     };
@@ -79,13 +75,10 @@ export default function App() {
     setUser(userData);
     setIsAuthenticated(true);
     localStorage.setItem('isAuthenticated', 'true');
-    
-    // Set auto-logout after 8 hours
     if (sessionTimeout) clearTimeout(sessionTimeout);
     const timeout = setTimeout(() => {
       handleLogout();
-    }, 8 * 60 * 60 * 1000); // 8 hours
-    
+    }, 8 * 60 * 60 * 1000);
     setSessionTimeout(timeout);
   };
 
@@ -122,7 +115,7 @@ export default function App() {
     };
   }, [user]);
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && window.location.pathname === '/') {
     return (
       <Router>
         <Routes>

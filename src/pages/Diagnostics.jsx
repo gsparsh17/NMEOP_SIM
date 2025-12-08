@@ -4,206 +4,206 @@ import { useNavigate } from "react-router-dom";
 export default function DataResources() {
   const dataResources = [
     {
-    id: 1,
-    name: "FFB Price Fixation Proceedings",
-    source: "Director of Horticulture, Telangana",
-    description: "Official proceedings for FFB price fixation in Telangana (October 2025)",
-    link: "/data/FFB Price Fixation @ October, 2025.pdf",
-    category: "Legal Documents",
-    frequency: "Annual",
-    format: "PDF"
-  },
-  {
-    id: 2,
-    name: "FFB Price History (5 Years)",
-    source: "Telangana Horticulture Department",
-    description: "FFB price data for the last 5 years",
-    link: "/data/FFBS for last 5 years.docx",
-    category: "Price Data",
-    frequency: "Annual",
-    format: "Word"
-  },
-  {
-    id: 3,
-    name: "State & Year wise Production and Area Expansion",
-    source: "Ministry of Agriculture",
-    description: "Brief on NMEO-OP roles and responsibilities",
-    link: "/data/BriefNMEOOPROL_05052022_6378735355.pdf",
-    category: "Policy Documents",
-    frequency: "Static",
-    format: "PDF"
-  },
-  {
-    id: 4,
-    name: "Telangana Oil Palm Act, 1993",
-    source: "Government of Telangana",
-    description: "The Telangana Oil Palm (Regulation of Production and Processing) Act, 1993",
-    link: "/data/Act 3 of 1993.pdf",
-    category: "Legal Framework",
-    frequency: "Static",
-    format: "PDF"
-  },
-  {
-    id: 5,
-    name: "NMEO-OP Guidelines",
-    source: "Ministry of Agriculture",
-    description: "Operational Guidelines of National Mission on Edible Oils-Oil Palm",
-    link: "/data/240527163655OPMCULGUIDTEL.pdf",
-    category: "Policy Documents",
-    frequency: "Static",
-    format: "PDF"
-  },
-  {
-    id: 6,
-    name: "Palm Oil Retail Price Dataset",
-    source: "Compiled Market Data",
-    description: "Daily retail price data for Palm Oil Packed across India",
-    link: "/data/daily_retail_price_PalmOilPacked-upto_apr_2015.xlsx",
-    category: "Market Data",
-    frequency: "Daily",
-    format: "Excel"
-  },
-  {
-    id: 7,
-    name: "UPAG Website",
-    source: "upag.gov.in",
-    description: "Official website for area and productivity data",
-    link: "https://upag.gov.in/area-productivity",
-    category: "Government Portal",
-    frequency: "Real-time",
-    format: "Web API"
-  },
-  {
-    id: 8,
-    name: "Palm Oil Press Release",
-    source: "Press Information Bureau",
-    description: "Government press releases and announcements on palm oil",
-    link: "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=1780271",
-    category: "News & Updates",
-    frequency: "Daily",
-    format: "Web"
-  },
-  {
-    id: 9,
-    name: "AGMARKNET Portal",
-    source: "Ministry of Agriculture",
-    description: "Primary source for agricultural marketing data and prices",
-    link: "https://agmarknet.gov.in/home",
-    category: "Market Intelligence",
-    frequency: "Daily",
-    format: "Web/API"
-  },
-  {
-    id: 10,
-    name: "Open Government Data Portal",
-    source: "data.gov.in",
-    description: "Open government datasets related to palm oil and agriculture",
-    link: "https://www.data.gov.in/search?title=Palm%20Oil&type=resources&sortby=_score",
-    category: "Open Data",
-    frequency: "Monthly",
-    format: "CSV/JSON"
-  },
-  {
-    id: 11,
-    name: "FFB Prices Database",
-    source: "AGMARKNET",
-    description: "Fresh Fruit Bunches price data from markets across India",
-    link: "https://agmarknet.gov.in/home",
-    category: "Price Data",
-    frequency: "Daily",
-    format: "CSV"
-  },
-  {
-    id: 12,
-    name: "Telangana Palm Oil Portal",
-    source: "Telangana Government",
-    description: "Official portal for Telangana palm oil farmers and industry",
-    link: "https://opm.telangana.gov.in/common/loginpage.tshcoilpalm",
-    category: "State Portal",
-    frequency: "Real-time",
-    format: "Web"
-  },
-  {
-    id: 13,
-    name: "Retail Price Reports",
-    source: "FCA Infoweb",
-    description: "Daily retail prices and weekly market reports",
-    link: "https://fcainfoweb.nic.in/Reports/DB/Dailyprices.aspx",
-    category: "Price Data",
-    frequency: "Daily",
-    format: "Web/Excel"
-  },
-  {
-    id: 14,
-    name: "Import Duty & Tariffs",
-    source: "Customs Department",
-    description: "Palm oil import duties, custom duties, tariffs and taxes",
-    link: "https://share.google/IzrAwJh6ILG941a2D",
-    category: "Trade Data",
-    frequency: "On-change",
-    format: "Excel"
-  },
-  {
-    id: 15,
-    name: "Refined Palm Oil ICRA Report",
-    source: "Government Reports",
-    description: "Refined Palm Oil data for January 2020",
-    link: "/data/Refined Palm Oil-T-1-January 2020.pdf",
-    category: "Market Data",
-    frequency: "Monthly",
-    format: "PDF"
-  },
-  {
-    id: 16,
-    name: "Combined Export Dataset",
-    source: "Compiled Export Data",
-    description: "Comprehensive dataset combining multiple export sources",
-    link: "https://docs.google.com/spreadsheets/d/1A1jB_eFA4UX2WQk9QdcDz6AhzUEma3tOBlFTEdrO11Y/edit?usp=sharing",
-    category: "Trade Data",
-    frequency: "Monthly",
-    format: "Excel"
-  },
-  {
-    id: 17,
-    name: "CACP Report - Oil Palm",
-    source: "Commission for Agricultural Costs and Prices",
-    description: "Oil Palm pricing analysis for growth, efficiency & equity",
-    link: "/data/CACP_Report_-_Oil_Palm.pdf",
-    category: "Research Reports",
-    frequency: "Static",
-    format: "PDF"
-  },
-  {
-    id: 18,
-    name: "Global Palm Oil Prices API",
-    source: "Trading Economics",
-    description: "Real-time global palm oil commodity prices in MYR and USD",
-    link: "https://tradingeconomics.com/commodity/palm-oil",
-    category: "Global Market Data",
-    frequency: "Real-time",
-    format: "API"
-  },
-  {
-    id: 19,
-    name: "Oil Palm Area Expansion and Production",
-    source: "Internal Documentation",
-    description: "Data visualization",
-    link: "/data/WhatsApp Image 2025-11-28 at 13.58.40_10119497.jpg",
-    category: "Visualization",
-    frequency: "Static",
-    format: "Image"
-  },
-  {
-    id: 20,
-    name: "Recent FFB Prices Graph/Chart",
-    source: "Internal Documentation",
-    description: "Data visualization",
-    link: "/data/WhatsApp Image 2025-11-30 at 19.28.52_1039a4a5.jpg",
-    category: "Visualization",
-    frequency: "Static",
-    format: "Image"
-  }
-];
+      id: 1,
+      name: "FFB Price Fixation Proceedings",
+      source: "Director of Horticulture, Telangana",
+      description: "Official proceedings for FFB price fixation in Telangana (October 2025)",
+      link: "/data/FFB Price Fixation @ October, 2025.pdf",
+      category: "Legal Documents",
+      frequency: "Annual",
+      format: "PDF"
+    },
+    {
+      id: 2,
+      name: "FFB Price History (5 Years)",
+      source: "Telangana Horticulture Department",
+      description: "FFB price data for the last 5 years",
+      link: "/data/FFBS for last 5 years.docx",
+      category: "Price Data",
+      frequency: "Annual",
+      format: "Word"
+    },
+    {
+      id: 3,
+      name: "State & Year wise Production and Area Expansion",
+      source: "Ministry of Agriculture",
+      description: "Brief on NMEO-OP roles and responsibilities",
+      link: "/data/BriefNMEOOPRoI_05052022_637873535509820380_OilPalm_RoI_Brief.pdf",
+      category: "Policy Documents",
+      frequency: "Static",
+      format: "PDF"
+    },
+    {
+      id: 4,
+      name: "Telangana Oil Palm Act, 1993",
+      source: "Government of Telangana",
+      description: "The Telangana Oil Palm (Regulation of Production and Processing) Act, 1993",
+      link: "/data/Act 3 of 1993.pdf",
+      category: "Legal Framework",
+      frequency: "Static",
+      format: "PDF"
+    },
+    {
+      id: 5,
+      name: "NMEO-OP Guidelines",
+      source: "Ministry of Agriculture",
+      description: "Operational Guidelines of National Mission on Edible Oils-Oil Palm",
+      link: "/data/240527163655OPMCULGUIDTEL.pdf",
+      category: "Policy Documents",
+      frequency: "Static",
+      format: "PDF"
+    },
+    {
+      id: 6,
+      name: "Palm Oil Retail Price Dataset",
+      source: "Compiled Market Data",
+      description: "Daily retail price data for Palm Oil Packed across India",
+      link: "/data/daily_retail_price_PalmOilPacked-upto_apr_2015.csv",
+      category: "Market Data",
+      frequency: "Daily",
+      format: "CSV"
+    },
+    {
+      id: 7,
+      name: "UPAG Website",
+      source: "upag.gov.in",
+      description: "Official website for area and productivity data",
+      link: "https://upag.gov.in/area-productivity",
+      category: "Government Portal",
+      frequency: "Real-time",
+      format: "Web API"
+    },
+    {
+      id: 8,
+      name: "Palm Oil Press Release",
+      source: "Press Information Bureau",
+      description: "Government press releases and announcements on palm oil",
+      link: "https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=1780271",
+      category: "News & Updates",
+      frequency: "Daily",
+      format: "Web"
+    },
+    {
+      id: 9,
+      name: "AGMARKNET Portal",
+      source: "Ministry of Agriculture",
+      description: "Primary source for agricultural marketing data and prices",
+      link: "https://agmarknet.gov.in/home",
+      category: "Market Intelligence",
+      frequency: "Daily",
+      format: "Web/API"
+    },
+    {
+      id: 10,
+      name: "Open Government Data Portal",
+      source: "data.gov.in",
+      description: "Open government datasets related to palm oil and agriculture",
+      link: "https://www.data.gov.in/search?title=Palm%20Oil&type=resources&sortby=_score",
+      category: "Open Data",
+      frequency: "Monthly",
+      format: "CSV/JSON"
+    },
+    {
+      id: 11,
+      name: "FFB Prices Database",
+      source: "AGMARKNET",
+      description: "Fresh Fruit Bunches price data from markets across India",
+      link: "https://agmarknet.gov.in/home",
+      category: "Price Data",
+      frequency: "Daily",
+      format: "CSV"
+    },
+    {
+      id: 12,
+      name: "Telangana Palm Oil Portal",
+      source: "Telangana Government",
+      description: "Official portal for Telangana palm oil farmers and industry",
+      link: "https://opm.telangana.gov.in/common/loginpage.tshcoilpalm",
+      category: "State Portal",
+      frequency: "Real-time",
+      format: "Web"
+    },
+    {
+      id: 13,
+      name: "Retail Price Reports",
+      source: "FCA Infoweb",
+      description: "Daily retail prices and weekly market reports",
+      link: "https://fcainfoweb.nic.in/Reports/DB/Dailyprices.aspx",
+      category: "Price Data",
+      frequency: "Daily",
+      format: "Web/Excel"
+    },
+    {
+      id: 14,
+      name: "Import Duty & Tariffs",
+      source: "Customs Department",
+      description: "Palm oil import duties, custom duties, tariffs and taxes",
+      link: "https://share.google/IzrAwJh6ILG941a2D",
+      category: "Trade Data",
+      frequency: "On-change",
+      format: "Excel"
+    },
+    {
+      id: 15,
+      name: "Refined Palm Oil ICRA Report",
+      source: "Government Reports",
+      description: "Refined Palm Oil data for January 2020",
+      link: "/data/Refined Palm Oil-T-1-January 2020.pdf",
+      category: "Market Data",
+      frequency: "Monthly",
+      format: "PDF"
+    },
+    {
+      id: 16,
+      name: "Combined Export Dataset",
+      source: "Compiled Export Data",
+      description: "Comprehensive dataset combining multiple export sources",
+      link: "https://docs.google.com/spreadsheets/d/1A1jB_eFA4UX2WQk9QdcDz6AhzUEma3tOBlFTEdrO11Y/edit?usp=sharing",
+      category: "Trade Data",
+      frequency: "Monthly",
+      format: "Excel"
+    },
+    {
+      id: 17,
+      name: "CACP Report - Oil Palm",
+      source: "Commission for Agricultural Costs and Prices",
+      description: "Oil Palm pricing analysis for growth, efficiency & equity",
+      link: "/data/CACP_Report_-_Oil_Palm.pdf",
+      category: "Research Reports",
+      frequency: "Static",
+      format: "PDF"
+    },
+    {
+      id: 18,
+      name: "Global Palm Oil Prices API",
+      source: "Trading Economics",
+      description: "Real-time global palm oil commodity prices in MYR and USD",
+      link: "https://tradingeconomics.com/commodity/palm-oil",
+      category: "Global Market Data",
+      frequency: "Real-time",
+      format: "API"
+    },
+    {
+      id: 19,
+      name: "Oil Palm Area Expansion and Production",
+      source: "Internal Documentation",
+      description: "Data visualization",
+      link: "/data/WhatsApp Image 2025-11-28 at 13.58.40_10119497.jpg",
+      category: "Visualization",
+      frequency: "Static",
+      format: "Image"
+    },
+    {
+      id: 20,
+      name: "Recent FFB Prices Graph/Chart",
+      source: "Internal Documentation",
+      description: "Data visualization",
+      link: "/data/WhatsApp Image 2025-11-30 at 19.28.52_1039a4a5.jpg",
+      category: "Visualization",
+      frequency: "Static",
+      format: "Image"
+    }
+  ];
 
   const categories = [
     "All",
@@ -234,10 +234,8 @@ export default function DataResources() {
 
   const handleOpenResource = (resource) => {
   if (resource.link.startsWith('/data/')) {
-    // For local files, open in new tab
     window.open(resource.link, '_blank', 'noopener,noreferrer');
   } else if (resource.link.startsWith('http')) {
-    // For external links, open in new tab
     window.open(resource.link, '_blank', 'noopener,noreferrer');
   }
 };
@@ -394,31 +392,31 @@ export default function DataResources() {
                         <div className="text-sm text-gray-900">{resource.format}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-  <button
-    onClick={() => handleOpenResource(resource)}
-    className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
-      resource.link.startsWith('/data/')
-        ? 'bg-[#1e5c2a] text-white hover:bg-[#164523]'
-        : 'bg-[#003366] text-white hover:bg-[#002244]'
-    }`}
-  >
-    {resource.link.startsWith('/data/') ? (
-      <>
-        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-        </svg>
-        Open File
-      </>
-    ) : (
-      <>
-        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-        </svg>
-        Open Link
-      </>
-    )}
-  </button>
-</td>
+                        <button
+                          onClick={() => handleOpenResource(resource)}
+                          className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium ${
+                            resource.link.startsWith('/data/')
+                              ? 'bg-[#1e5c2a] text-white hover:bg-[#164523]'
+                              : 'bg-[#003366] text-white hover:bg-[#002244]'
+                          }`}
+                        >
+                          {resource.link.startsWith('/data/') ? (
+                            <>
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Download
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                              Open Link
+                            </>
+                          )}
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
