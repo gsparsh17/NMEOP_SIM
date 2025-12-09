@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, ComposedChart, Area, ScatterChart, Scatter, ZAxis,
   PieChart, Pie, Cell
 } from "recharts";
-import { Search } from "lucide-react";
+import { Book, Search } from "lucide-react";
 
 const CPOMonthlyImportSimulator = () => {
   // ==================== AVAILABLE FIELDS FOR SELECTION ====================
@@ -477,9 +477,7 @@ const CPOMonthlyImportSimulator = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="bg-white/20 p-3 rounded-xl">
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
+              <Book className="h-8 w-8 text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">Monthly CPO Import Simulator</h1>
