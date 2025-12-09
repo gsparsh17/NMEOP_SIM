@@ -10,6 +10,7 @@ import {
   nmeoOpProgress
 } from "../data/staticData";
 import { useNavigate } from "react-router-dom";
+import TradeSimulationComponent from './TradeSimulationComponent'; // or wherever you place it
 
 export default function ScenarioBuilder() {
   // --- 1. State Management ---
@@ -49,6 +50,19 @@ export default function ScenarioBuilder() {
   const [forexPattern, setForexPattern] = useState("increasing");
   const [forexRate, setForexRate] = useState(0.03);
   const [forexVolatility, setForexVolatility] = useState(0.05);
+
+  // Per-country extra tariff adjustments (for multi-year Monte Carlo inputs)
+  const [countryExtraTariffs, setCountryExtraTariffs] = useState({
+    India: 0,
+    Indonesia: 0,
+    Malaysia: 0,
+    Thailand: 0
+  });
+  // Base total duty (BCD + cess) for multi-year simulation inputs
+  const [baseTotalDutyPct, setBaseTotalDutyPct] = useState(duty + cess);
+  // Selected country to include in multi-year simulation (single-select)
+  const ALL_COUNTRIES = ["India", "Indonesia", "Malaysia", "Thailand"];
+  const [selectedCountry, setSelectedCountry] = useState(ALL_COUNTRIES[0]);
 
   const [inflationPattern, setInflationPattern] = useState("increasing");
   const [inflationVolatilityAmplitude, setInflationVolatilityAmplitude] = useState(0.05);
@@ -129,6 +143,17 @@ export default function ScenarioBuilder() {
   const fetchMultiYearSimulation = async () => {
     setLoading(true);
     setError(null);
+    // Validation: require a selected country and limit simulations to 25
+    if (!selectedCountry) {
+      setError('Please select a country to include in the simulation.');
+      setLoading(false);
+      return null;
+    }
+    if (Number(numSimulations) > 25) {
+      setError('Number of simulations cannot exceed 25.');
+      setLoading(false);
+      return null;
+    }
     try {
       // Use the updated request body structure
       const requestBody = {
@@ -153,6 +178,22 @@ export default function ScenarioBuilder() {
         route_issues: Number(routeIssues) || 0.04,
         environment_impact: Number(environmentImpact) || 0.03
       };
+
+      // Echo base total duty and per-country tariff adjustments so backend
+      // can compute `base_total_duty_pct`, `country_extra_tariff_pct` and
+      // `effective_total_duty_pct` for each simulated country.
+      requestBody.base_total_duty_pct = Number(baseTotalDutyPct) || (duty + cess);
+      // Only include the selected country in adjustments
+      const sel = selectedCountry;
+      const extraForSel = Number(countryExtraTariffs[sel]) || 0;
+      requestBody.country_tariff_adjustments = [{
+        country: sel,
+        country_extra_tariff_pct: extraForSel,
+        base_total_duty_pct: requestBody.base_total_duty_pct,
+        effective_total_duty_pct: +(requestBody.base_total_duty_pct + extraForSel).toFixed(2)
+      }];
+      // Request that backend return simulation paths and yearly summary
+      requestBody.include_simulation_paths = true;
       
       console.log("Sending multi-year request:", requestBody);
       
@@ -1958,23 +1999,66 @@ export default function ScenarioBuilder() {
                       type="number"
                       className="w-full rounded-lg border border-gray-300 p-2"
                       value={numSimulations}
-                      onChange={(e) => setNumSimulations(parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value) || 0;
+                        if (v > 25) {
+                          setNumSimulations(25);
+                          setError('Number of simulations cannot exceed 25');
+                        } else if (v < 1) {
+                          setNumSimulations(1);
+                          setError(null);
+                        } else {
+                          setNumSimulations(v);
+                          setError(null);
+                        }
+                      }}
                       min="1"
-                      max="1000"
+                      max="25"
                     />
                     <div className="text-xs text-gray-500 mt-1">Number of Monte-Carlo simulation paths</div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Duty % (BCD + Cess)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Base Total Duty % (BCD + Cess)</label>
                     <input
                       type="number"
                       step="0.1"
                       className="w-full rounded-lg border border-gray-300 p-2"
-                      value={totalDutyPct}
-                      onChange={(e) => setTotalDutyPct(parseFloat(e.target.value))}
+                      value={baseTotalDutyPct}
+                      onChange={(e) => setBaseTotalDutyPct(parseFloat(e.target.value))}
                     />
-                    <div className="text-xs text-gray-500 mt-1">Override combined duty percentage</div>
+                    <div className="text-xs text-gray-500 mt-1">Base duty percentage used for all countries; per-country extras below</div>
+                  </div>
+                </div>
+
+                {/* Countries selection and per-country extra tariff */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Country to Include</label>
+                  <div>
+                    <select
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={selectedCountry}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                    >
+                      {ALL_COUNTRIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mt-3">
+                    <div className="text-sm font-medium text-gray-700 mb-2">Extra Tariff for {selectedCountry} (%)</div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-28 text-sm">{selectedCountry}</div>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="flex-1 rounded-lg border border-gray-300 p-2"
+                        value={countryExtraTariffs[selectedCountry] ?? 0}
+                        onChange={(e) => setCountryExtraTariffs(prev => ({ ...prev, [selectedCountry]: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">Enter extra tariff percentage for the selected country.</div>
                   </div>
                 </div>
 
@@ -2121,13 +2205,19 @@ export default function ScenarioBuilder() {
                   </div>
                 </div>
                 
-                <button
-                  onClick={fetchMultiYearSimulation}
-                  disabled={loading}
-                  className="mt-4 w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-                >
-                  {loading ? "Running Multi-Year Simulation..." : "Run Multi-Year Simulation"}
-                </button>
+                <div className="mt-3">
+                  <div className="text-xs text-gray-600 mb-2">Selected country: <span className="font-semibold">{selectedCountry || 'None'}</span></div>
+                  {error && (
+                    <div className="mb-2 text-sm text-red-600">{error}</div>
+                  )}
+                  <button
+                    onClick={fetchMultiYearSimulation}
+                    disabled={loading || !selectedCountry || Number(numSimulations) > 25}
+                    className="mt-1 w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  >
+                    {loading ? "Running Multi-Year Simulation..." : "Run Multi-Year Simulation"}
+                  </button>
+                </div>
               </div>
               
             {/* Additional Simulation Options - Add this section */}
@@ -2458,6 +2548,24 @@ export default function ScenarioBuilder() {
           </div>
         </div>
       )}
+
+<div className="mt-8">
+  <TradeSimulationComponent 
+    onSimulationComplete={(result) => {
+      // You can use the results to update your existing state
+      console.log('Trade simulation completed:', result);
+      
+      // Example: Update duty based on recommendations
+      if (result.india_recommended_policy) {
+        // Parse recommendations to adjust duty
+        const tariffRecommendations = result.india_recommended_policy.filter(rec => 
+          rec.includes('tariff') || rec.includes('duty')
+        );
+        // You could implement logic here to adjust duty/cess based on recommendations
+      }
+    }}
+  />
+</div>
 
     </div>
   );
