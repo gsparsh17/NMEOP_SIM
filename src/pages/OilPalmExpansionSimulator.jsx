@@ -1,177 +1,1121 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ComposedChart, Cell
+  ResponsiveContainer, ComposedChart, AreaChart, Area,
+  PieChart, Pie, Cell
 } from "recharts";
+import { Search, Zap, Settings, Play, Pause, RotateCcw, ChevronRight, ChevronLeft, Filter, X, TrendingUp, AlertTriangle, DollarSign, Leaf, Users, Target } from "lucide-react";
 
-const OilPalmExpansionSimulator = ({ selectedState = "All-India" }) => {
-  const [showParams, setShowParams] = useState(false);
+const OilPalmForestFireSimulator = ({ selectedState = "All-India" }) => {
+  const stateBaselines = {
+    "Andhra Pradesh": {
+      baseAreaPerZone: 3000,
+      breakevenPrice: 4000,
+      growthRate: 0.15,
+      sentimentBias: 0.6
+    },
+    "Telangana": {
+      baseAreaPerZone: 2500,
+      breakevenPrice: 4200,
+      growthRate: 0.12,
+      sentimentBias: 0.55
+    },
+    "Karnataka": {
+      baseAreaPerZone: 2000,
+      breakevenPrice: 4300,
+      growthRate: 0.10,
+      sentimentBias: 0.5
+    },
+    "Tamil Nadu": {
+      baseAreaPerZone: 1500,
+      breakevenPrice: 4500,
+      growthRate: 0.08,
+      sentimentBias: 0.45
+    },
+    "Gujarat": {
+      baseAreaPerZone: 1200,
+      breakevenPrice: 4600,
+      growthRate: 0.07,
+      sentimentBias: 0.4
+    },
+    "Assam": {
+      baseAreaPerZone: 1000,
+      breakevenPrice: 4700,
+      growthRate: 0.05,
+      sentimentBias: 0.35
+    },
+    "All-India": {
+      baseAreaPerZone: 2000,
+      breakevenPrice: 4300,
+      growthRate: 0.10,
+      sentimentBias: 0.5
+    }
+  };
+
+  // ==================== SIMULATION CONFIGURATION ====================
+  const SIMULATION_MODES = [
+    { id: 'monthly', name: 'Monthly', interval: 12, label: 'Month', total: 60 }, // 5 years
+    { id: 'quarterly', name: 'Quarterly', interval: 4, label: 'Quarter', total: 20 }, // 5 years
+    { id: 'yearly', name: 'Yearly', interval: 1, label: 'Year', total: 5 } // 5 years
+  ];
+
+  const SPEED_PRESETS = [
+    { id: 'slow', name: 'Slow', value: 1200, icon: '🐢' },
+    { id: 'medium', name: 'Medium', value: 600, icon: '🐇' },
+    { id: 'fast', name: 'Fast', value: 300, icon: '⚡' },
+    { id: 'instant', name: 'Instant', value: 100, icon: '🚀' }
+  ];
+
+  // ==================== AVAILABLE PARAMETERS ====================
+  const availableParameters = [
+    { 
+      id: 'cpoPrice', 
+      name: 'CPO Price', 
+      min: 30000, 
+      max: 100000, 
+      step: 1000, 
+      unit: '₹/MT',
+      category: 'price',
+      description: 'Crude Palm Oil market price',
+      icon: <DollarSign className="w-4 h-4" />
+    },
+    { 
+      id: 'attritionRate', 
+      name: 'Attrition Rate', 
+      min: 5, 
+      max: 50, 
+      step: 1, 
+      unit: '%/yr',
+      category: 'risk',
+      description: 'Annual area loss when unprofitable',
+      icon: <TrendingUp className="w-4 h-4" />
+    },
+    { 
+      id: 'contagionStrength', 
+      name: 'Contagion Strength', 
+      min: 1, 
+      max: 30, 
+      step: 1, 
+      unit: '%',
+      category: 'risk',
+      description: 'How quickly abandonment spreads',
+      icon: <Users className="w-4 h-4" />
+    },
+    { 
+      id: 'growthRate', 
+      name: 'Growth Rate', 
+      min: 5, 
+      max: 30, 
+      step: 1, 
+      unit: '%',
+      category: 'growth',
+      description: 'Annual growth when profitable',
+      icon: <Leaf className="w-4 h-4" />
+    },
+    { 
+      id: 'shockProbability', 
+      name: 'Shock Probability', 
+      min: 0, 
+      max: 15, 
+      step: 0.5, 
+      unit: '%',
+      category: 'risk',
+      description: 'Chance of price shock per period',
+      icon: <AlertTriangle className="w-4 h-4" />
+    },
+    { 
+      id: 'subsidyImpact', 
+      name: 'Subsidy Impact', 
+      min: 0, 
+      max: 40, 
+      step: 1, 
+      unit: '%',
+      category: 'policy',
+      description: 'Government subsidy effectiveness',
+      icon: <Target className="w-4 h-4" />
+    },
+    { 
+      id: 'baseAreaPerZone', 
+      name: 'Base Area Per Zone', 
+      min: 500, 
+      max: 5000, 
+      step: 100, 
+      unit: 'Ha',
+      category: 'area',
+      description: 'Initial cultivated area per zone',
+      icon: <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+    },
+    { 
+      id: 'zoneDensity', 
+      name: 'Zone Density', 
+      min: 20, 
+      max: 80, 
+      step: 1, 
+      unit: 'zones',
+      category: 'area',
+      description: 'Number of cultivation zones',
+      icon: <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+    },
+    { 
+      id: 'recoveryTime', 
+      name: 'Recovery Time', 
+      min: 6, 
+      max: 36, 
+      step: 1, 
+      unit: 'months',
+      category: 'area',
+      description: 'Time for abandoned zones to recover',
+      icon: <RotateCcw className="w-4 h-4" />
+    }
+  ];
+
+  // ==================== STATE VARIABLES ====================
+  const [simulationMode, setSimulationMode] = useState('monthly');
+  const [simulationSpeed, setSimulationSpeed] = useState(600);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [currentSimulationYear, setCurrentSimulationYear] = useState(0);
-  const [animationSpeed, setAnimationSpeed] = useState(800); // Slower default speed
-  const [animatedData, setAnimatedData] = useState([]);
-  const [hasSimulationRun, setHasSimulationRun] = useState(false); // Track if simulation has run
+  const [currentPeriod, setCurrentPeriod] = useState(0);
   const simulationIntervalRef = useRef(null);
   
-  // State-wise mature area baselines (official assumptions)
-  const stateBaselines = {
-    "Andhra Pradesh": 180000,
-    "Telangana": 55000,
-    "Karnataka": 45000,
-    "Tamil Nadu": 35000,
-    "Gujarat": 20000,
-    "Assam": 25000,
-    "All-India": 370000 // 3.7 lakh ha mature area (2021 baseline)
-  };
-
-  // Core parameters - ONLY validated ones remain
+  const [selectedParams, setSelectedParams] = useState(['cpoPrice', 'attritionRate']);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSidebar, setShowSidebar] = useState(true);
+  
   const [params, setParams] = useState({
-    startingYear: 2024,
-    simulationYears: 10,
-    newAreaPerYear: 65000,
-    OER: 19.42, // % (from pricing order)
-    cpoPrice: 115715.58 // ₹/MT (from Govt order)
+    cpoPrice: 45000,
+    attritionRate: 20,
+    contagionStrength: 15,
+    growthRate: 10,
+    shockProbability: 5,
+    subsidyImpact: 15,
+    baseAreaPerZone: 2000,
+    zoneDensity: 48,
+    recoveryTime: 12
   });
 
-  // Fixed yield pattern (from your document)
-  const yieldByAge = { 
-    4: 5,   // Year 4: 5 MT/Ha
-    5: 8,   // Year 5: 8 MT/Ha
-    6: 11,  // Year 6: 11 MT/Ha
-    7: 15,  // Year 7: 15 MT/Ha
-    8: 18   // Year 8+: 18 MT/Ha
-  };
+  const [history, setHistory] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [zoneMetrics, setZoneMetrics] = useState({
+    healthy: 48,
+    atRisk: 0,
+    abandoned: 0,
+    recovering: 0
+  });
 
-  // Auto-calculate FFB price based on 14.61% rule
-  const calculateFFBPrice = () => ((14.61 / 100) * params.cpoPrice).toFixed(2);
-
-  const handleParamChange = (key, val) => {
-    setParams(prev => ({ ...prev, [key]: Number(val) }));
-    if (isSimulating) {
-      stopSimulation();
+  // ==================== HELPER FUNCTIONS ====================
+  const getCurrentMode = useCallback(() => 
+    SIMULATION_MODES.find(mode => mode.id === simulationMode),
+    [simulationMode]
+  );
+  
+  // Helper to get time label based on period and mode
+  const getTimeLabel = useCallback((period) => {
+    const mode = getCurrentMode();
+    
+    switch(mode.id) {
+      case 'monthly':
+        const month = (period % 12);
+        const year = 2024 + Math.floor(period / 12);
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${monthNames[month]} ${year}`;
+        
+      case 'quarterly':
+        const quarter = (period % 4);
+        const qYear = 2024 + Math.floor(period / 4);
+        return `Q${quarter + 1} ${qYear}`;
+        
+      case 'yearly':
+        return `Year ${2024 + period}`;
+        
+      default:
+        return `Period ${period + 1}`;
     }
-    // Don't reset hasSimulationRun here - let user decide when to run again
-  };
+  }, [getCurrentMode]);
 
-  // --- Core Simulation Logic (Simplified) ---
-  const fullSimulationData = useMemo(() => {
-    const data = [];
-    let matureArea = stateBaselines[selectedState] || 0;
-    let immature = []; // {age, area}
+  const calculateFFBPrice = useCallback(() => {
+    return params.cpoPrice * 0.1461; // 14.61% of CPO price
+  }, [params.cpoPrice]);
+
+  const calculateProfitability = useCallback(() => {
     const ffbPrice = calculateFFBPrice();
+    const breakeven = stateBaselines[selectedState]?.breakevenPrice || 4300;
+    return ffbPrice >= breakeven;
+  }, [calculateFFBPrice, selectedState]);
 
-    for (let year = 0; year < params.simulationYears; year++) {
-      const currentYear = params.startingYear + year;
+  const initializeSimulation = useCallback(() => {
+    const state = stateBaselines[selectedState] || stateBaselines["All-India"];
+    const totalZones = params.zoneDensity;
+    const baseAreaPerZone = params.baseAreaPerZone;
+    
+    const totalArea = totalZones * baseAreaPerZone;
+    const ffbPrice = calculateFFBPrice();
+    const isProfitable = calculateProfitability();
+    
+    const initialData = {
+      period: 0,
+      timeLabel: getTimeLabel(0),
+      totalArea: Math.round(totalArea),
+      avgSentiment: state.sentimentBias,
+      ffbPrice: parseFloat(ffbPrice.toFixed(2)),
+      profitability: isProfitable ? 1.0 : 0.0,
+      zoneHealthy: totalZones,
+      zoneAtRisk: 0,
+      zoneAbandoned: 0,
+      zoneRecovering: 0,
+      cpoPrice: params.cpoPrice,
+      attritionRate: params.attritionRate,
+      contagionStrength: params.contagionStrength,
+      growthRate: params.growthRate,
+      shockProbability: params.shockProbability,
+      subsidyImpact: params.subsidyImpact,
+      baseAreaPerZone: params.baseAreaPerZone,
+      zoneDensity: params.zoneDensity,
+      recoveryTime: params.recoveryTime
+    };
+    
+    setHistory([initialData]);
+    setEvents([]);
+    setZoneMetrics({
+      healthy: totalZones,
+      atRisk: 0,
+      abandoned: 0,
+      recovering: 0
+    });
+    setCurrentPeriod(0);
+    
+    return initialData;
+  }, [selectedState, params, calculateFFBPrice, calculateProfitability, getTimeLabel]);
 
-      // Add new area each year
-      immature.push({ age: 0, area: params.newAreaPerYear });
-
-      // Age the immature blocks
-      immature = immature.map(x => ({ ...x, age: x.age + 1 }));
-
-      // Move those age 4 -> mature
-      const maturedThisYear = immature.filter(x => x.age === 4);
-      matureArea += maturedThisYear.reduce((s, x) => s + x.area, 0);
-
-      // Remove matured areas from immature
-      immature = immature.filter(x => x.age < 4);
-
-      // Calculate FFB Production
-      let totalFFB = 0;
+  // ==================== FIXED SIMULATION ENGINE ====================
+  const simulatePeriod = useCallback((currentState) => {
+    const mode = getCurrentMode();
+    const currentFFBPrice = calculateFFBPrice();
+    const state = stateBaselines[selectedState] || stateBaselines["All-India"];
+    const breakeven = state.breakevenPrice;
+    
+    // Calculate period factors
+    const periodFactor = mode.interval / 12;
+    const adjustedBreakeven = breakeven * (1 - params.subsidyImpact / 100);
+    const isProfitable = currentFFBPrice >= adjustedBreakeven;
+    
+    // Copy current metrics
+    const currentZones = {
+      healthy: currentState.zoneHealthy,
+      atRisk: currentState.zoneAtRisk,
+      abandoned: currentState.zoneAbandoned,
+      recovering: currentState.zoneRecovering
+    };
+    
+    let newZoneMetrics = { ...currentZones };
+    let totalArea = currentState.totalArea;
+    let avgSentiment = currentState.avgSentiment;
+    const newEvents = [];
+    
+    // Calculate base effects
+    const randomFactor = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+    
+    if (isProfitable) {
+      // PROFITABLE SCENARIO - Growth & Recovery
+      const growthFactor = (params.growthRate / 100) * periodFactor * randomFactor;
+      totalArea = totalArea * (1 + growthFactor);
+      avgSentiment = Math.min(1.0, avgSentiment + 0.05 * randomFactor);
       
-      // Production from immature areas (age >= 4)
-      for (let block of immature) {
-        if (block.age >= 4) {
-          const age = Math.min(block.age, 8);
-          totalFFB += block.area * yieldByAge[age];
+      // Recovery from abandoned zones
+      if (newZoneMetrics.abandoned > 0) {
+        const recoveryChance = 0.4 * periodFactor;
+        if (Math.random() < recoveryChance) {
+          const recovered = Math.max(1, Math.floor(newZoneMetrics.abandoned * 0.15 * randomFactor));
+          newZoneMetrics.abandoned -= recovered;
+          newZoneMetrics.recovering += recovered;
+          
+          newEvents.push({
+            period: currentPeriod + 1,
+            type: 'recovery_start',
+            zones: recovered,
+            description: `${recovered} abandoned zones started recovery process`
+          });
         }
       }
       
-      // Production from mature area (distributed across ages 4-8+)
-      // Simple assumption: mature area equally distributed across age groups 4-8+
-      const maturePortion = matureArea / 5; // 5 age groups (4, 5, 6, 7, 8+)
-      for (let age = 4; age <= 8; age++) {
-        const yieldValue = yieldByAge[age];
-        totalFFB += maturePortion * yieldValue;
+      // Recovery to healthy zones
+      if (newZoneMetrics.recovering > 0) {
+        const fullRecoveryChance = 0.3 * periodFactor;
+        if (Math.random() < fullRecoveryChance) {
+          const becomeHealthy = Math.max(1, Math.floor(newZoneMetrics.recovering * 0.2 * randomFactor));
+          newZoneMetrics.recovering -= becomeHealthy;
+          newZoneMetrics.healthy += becomeHealthy;
+          
+          newEvents.push({
+            period: currentPeriod + 1,
+            type: 'recovery_complete',
+            zones: becomeHealthy,
+            description: `${becomeHealthy} zones fully recovered and became healthy`
+          });
+        }
       }
-
-      // CPO Production
-      const totalCPO = totalFFB * (params.OER / 100);
-
-      data.push({
-        year: currentYear,
-        matureArea: Math.round(matureArea),
-        immatureArea: Math.round(immature.reduce((s, x) => s + x.area, 0)),
-        totalArea: Math.round(matureArea + immature.reduce((s, x) => s + x.area, 0)),
-        totalFFB: Math.round(totalFFB),
-        totalCPO: Math.round(totalCPO),
-        ffbPrice: ffbPrice,
-        yieldPerHa: matureArea > 0 ? (totalFFB / matureArea).toFixed(1) : 0
+      
+      // New zone development when highly profitable
+      if (currentFFBPrice > breakeven * 1.3 && Math.random() < 0.1) {
+        const newZones = Math.max(1, Math.floor(Math.random() * 3));
+        newZoneMetrics.healthy += newZones;
+        
+        newEvents.push({
+          period: currentPeriod + 1,
+          type: 'expansion',
+          zones: newZones,
+          description: `${newZones} new zones developed due to high profitability`
+        });
+      }
+    } else {
+      // UNPROFITABLE SCENARIO - Attrition & Risk
+      const attritionFactor = (params.attritionRate / 100) * periodFactor * randomFactor;
+      const areaLoss = totalArea * attritionFactor;
+      totalArea = Math.max(0, totalArea - areaLoss);
+      avgSentiment = Math.max(0.1, avgSentiment - 0.08 * randomFactor);
+      
+      // Healthy zones become at-risk
+      if (avgSentiment < 0.6 && newZoneMetrics.healthy > 0) {
+        const riskConversionRate = (params.contagionStrength / 100) * (0.7 - avgSentiment);
+        const becomeAtRisk = Math.max(1, Math.floor(newZoneMetrics.healthy * riskConversionRate * periodFactor));
+        newZoneMetrics.healthy = Math.max(0, newZoneMetrics.healthy - becomeAtRisk);
+        newZoneMetrics.atRisk += becomeAtRisk;
+        
+        if (becomeAtRisk > 0) {
+          newEvents.push({
+            period: currentPeriod + 1,
+            type: 'risk_increase',
+            zones: becomeAtRisk,
+            areaLost: Math.round(areaLoss),
+            description: `${becomeAtRisk} zones became at-risk (sentiment: ${(avgSentiment * 100).toFixed(1)}%)`
+          });
+        }
+      }
+      
+      // At-risk zones get abandoned
+      if (newZoneMetrics.atRisk > 0) {
+        const abandonmentRate = (params.attritionRate / 100) * 0.3 * periodFactor;
+        const abandoned = Math.max(1, Math.floor(newZoneMetrics.atRisk * abandonmentRate * randomFactor));
+        newZoneMetrics.atRisk = Math.max(0, newZoneMetrics.atRisk - abandoned);
+        newZoneMetrics.abandoned += abandoned;
+        
+        if (abandoned > 0) {
+          const lostArea = abandoned * params.baseAreaPerZone;
+          newEvents.push({
+            period: currentPeriod + 1,
+            type: 'abandonment',
+            zones: abandoned,
+            areaLost: Math.round(lostArea),
+            description: `${abandoned} zones abandoned (${Math.round(lostArea)} Ha lost)`
+          });
+        }
+      }
+    }
+    
+    // Price shock event (affects CPO price temporarily)
+    const shockChance = (params.shockProbability / 100) * periodFactor;
+    let shockMultiplier = 1.0;
+    if (Math.random() < shockChance) {
+      const shockMagnitude = 0.2 + Math.random() * 0.3; // 20-50% drop
+      shockMultiplier = 1 - shockMagnitude;
+      
+      newEvents.push({
+        period: currentPeriod + 1,
+        type: 'price_shock',
+        magnitude: shockMagnitude,
+        description: `Major price shock: CPO prices dropped by ${(shockMagnitude * 100).toFixed(0)}%`
       });
-    }
-    return data;
-  }, [params, selectedState]);
-
-  // Start simulation animation
-  const startSimulation = () => {
-    if (isSimulating) {
-      stopSimulation();
-      return;
-    }
-    
-    setIsSimulating(true);
-    setHasSimulationRun(true);
-    setCurrentSimulationYear(0);
-    setAnimatedData([]);
-    
-    // Initialize with starting baseline (Year 0)
-    const baselineData = {
-      year: params.startingYear - 1,
-      matureArea: stateBaselines[selectedState] || 0,
-      immatureArea: 0,
-      totalArea: stateBaselines[selectedState] || 0,
-      totalFFB: 0,
-      totalCPO: 0,
-      ffbPrice: calculateFFBPrice(),
-      yieldPerHa: 0
-    };
-    setAnimatedData([baselineData]);
-    
-    let currentYear = 0;
-    const fullData = [...fullSimulationData];
-    
-    simulationIntervalRef.current = setInterval(() => {
-      if (currentYear >= fullData.length) {
-        stopSimulation();
-        return;
+      
+      // Shock effect on sentiment
+      avgSentiment = Math.max(0.05, avgSentiment - shockMagnitude * 0.7);
+      
+      // Shock effect on zones
+      const shockEffect = Math.floor((newZoneMetrics.healthy + newZoneMetrics.atRisk) * shockMagnitude * 0.3);
+      if (shockEffect > 0) {
+        const healthyAffected = Math.floor(shockEffect * 0.7);
+        const atRiskAffected = Math.floor(shockEffect * 0.3);
+        
+        newZoneMetrics.healthy = Math.max(0, newZoneMetrics.healthy - healthyAffected);
+        newZoneMetrics.atRisk = Math.max(0, newZoneMetrics.atRisk + healthyAffected - atRiskAffected);
+        newZoneMetrics.abandoned += atRiskAffected;
       }
-      
-      const newDataPoint = fullData[currentYear];
-      setAnimatedData(prev => [...prev, newDataPoint]);
-      setCurrentSimulationYear(currentYear + 1);
-      
-      currentYear++;
-    }, animationSpeed);
-  };
+    }
+    
+    // Recalculate total area based on zone status
+    const effectiveHealthyZones = newZoneMetrics.healthy + newZoneMetrics.recovering * 0.5;
+    totalArea = Math.round(effectiveHealthyZones * params.baseAreaPerZone);
+    
+    // Ensure values are within bounds
+    totalArea = Math.max(0, totalArea);
+    avgSentiment = Math.max(0.05, Math.min(1.0, parseFloat(avgSentiment.toFixed(3))));
+    
+    // Apply CPO price variation (with potential shock effect)
+    const cpoPriceVariation = 0.95 + Math.random() * 0.1; // 5% variation
+    const newCpoPrice = Math.round(params.cpoPrice * cpoPriceVariation * shockMultiplier);
+    
+    // Recalculate FFB price with new CPO price
+    const newFFBPrice = newCpoPrice * 0.1461;
+    const newProfitability = newFFBPrice >= adjustedBreakeven ? 1.0 : 0.0;
+    
+    const periodData = {
+      period: currentPeriod + 1,
+      timeLabel: getTimeLabel(currentPeriod + 1),
+      totalArea,
+      avgSentiment,
+      ffbPrice: parseFloat(newFFBPrice.toFixed(2)),
+      profitability: newProfitability,
+      zoneHealthy: newZoneMetrics.healthy,
+      zoneAtRisk: newZoneMetrics.atRisk,
+      zoneAbandoned: newZoneMetrics.abandoned,
+      zoneRecovering: newZoneMetrics.recovering,
+      cpoPrice: newCpoPrice,
+      attritionRate: params.attritionRate,
+      contagionStrength: params.contagionStrength,
+      growthRate: params.growthRate,
+      shockProbability: params.shockProbability,
+      subsidyImpact: params.subsidyImpact,
+      baseAreaPerZone: params.baseAreaPerZone,
+      zoneDensity: params.zoneDensity,
+      recoveryTime: params.recoveryTime
+    };
+    
+    return { periodData, newZoneMetrics, newEvents };
+  }, [
+    params, 
+    selectedState, 
+    calculateFFBPrice, 
+    currentPeriod, 
+    getCurrentMode, 
+    getTimeLabel
+  ]);
 
-  // Stop simulation
-  const stopSimulation = () => {
+  const stopSimulation = useCallback(() => {
     if (simulationIntervalRef.current) {
       clearInterval(simulationIntervalRef.current);
       simulationIntervalRef.current = null;
     }
     setIsSimulating(false);
-  };
+  }, []);
 
-  // Reset simulation
-  const resetSimulation = () => {
+  // ==================== FIXED SIMULATION CONTROL ====================
+  const startSimulation = useCallback(() => {
+    if (isSimulating) {
+      stopSimulation();
+      return;
+    }
+    
+    if (selectedParams.length < 2) {
+      alert("Please select at least 2 parameters to simulate");
+      return;
+    }
+    
+    setIsSimulating(true);
+    const mode = getCurrentMode();
+    
+    // Initialize if needed
+    if (history.length === 0) {
+      initializeSimulation();
+    }
+    
+    let localPeriod = currentPeriod;
+    let localHistory = [...history];
+    let localZoneMetrics = { ...zoneMetrics };
+    
+    simulationIntervalRef.current = setInterval(() => {
+      if (localPeriod >= mode.total) {
+        stopSimulation();
+        return;
+      }
+      
+      const latestData = localHistory[localHistory.length - 1];
+      const { periodData, newZoneMetrics, newEvents } = simulatePeriod(latestData);
+      
+      // Update local state
+      localHistory = [...localHistory, periodData].slice(-100); // Keep last 100 periods
+      localZoneMetrics = newZoneMetrics;
+      localPeriod++;
+      
+      // Update React state
+      setHistory(localHistory);
+      setZoneMetrics(localZoneMetrics);
+      setCurrentPeriod(localPeriod);
+      
+      if (newEvents.length > 0) {
+        setEvents(prev => [...prev, ...newEvents].slice(-20));
+      }
+      
+    }, simulationSpeed);
+  }, [
+    isSimulating, 
+    selectedParams.length, 
+    simulationSpeed, 
+    history, 
+    currentPeriod, 
+    zoneMetrics, 
+    initializeSimulation, 
+    simulatePeriod, 
+    getCurrentMode,
+    stopSimulation
+  ]);
+
+  const resetSimulation = useCallback(() => {
     stopSimulation();
-    setAnimatedData([]);
-    setCurrentSimulationYear(0);
-    setHasSimulationRun(false);
+    initializeSimulation();
+  }, [stopSimulation, initializeSimulation]);
+
+  // ==================== PARAMETER HANDLERS ====================
+  const handleParamChange = useCallback((key, value) => {
+    setParams(prev => ({ ...prev, [key]: value }));
+    
+    // Update zone metrics if density changes
+    if (key === 'zoneDensity') {
+      setZoneMetrics(prev => ({
+        healthy: value,
+        atRisk: 0,
+        abandoned: 0,
+        recovering: 0
+      }));
+    }
+  }, []);
+
+  const handleParamToggle = useCallback((paramId) => {
+    setSelectedParams(prev => {
+      if (prev.includes(paramId)) {
+        return prev.filter(id => id !== paramId);
+      } else {
+        return [...prev, paramId];
+      }
+    });
+  }, []);
+
+  const handleSpeedChange = useCallback((speed) => {
+    setSimulationSpeed(speed);
+    if (isSimulating) {
+      stopSimulation();
+      // Restart simulation with new speed
+      setTimeout(startSimulation, 100);
+    }
+  }, [isSimulating, startSimulation, stopSimulation]);
+
+  // ==================== FILTERED PARAMETERS ====================
+  const filteredParameters = useMemo(() => {
+    if (!searchQuery.trim()) return availableParameters;
+    
+    const query = searchQuery.toLowerCase();
+    return availableParameters.filter(param =>
+      param.name.toLowerCase().includes(query) ||
+      param.category.toLowerCase().includes(query) ||
+      param.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  // ==================== DERIVED DATA ====================
+  const currentKPIs = useMemo(() => {
+    if (history.length === 0) {
+      const ffbPrice = calculateFFBPrice();
+      const isProfitable = calculateProfitability();
+      const totalZones = params.zoneDensity;
+      const baseAreaPerZone = params.baseAreaPerZone;
+      
+      return {
+        totalArea: totalZones * baseAreaPerZone,
+        avgSentiment: stateBaselines[selectedState]?.sentimentBias || 0.5,
+        ffbPrice: parseFloat(ffbPrice.toFixed(2)),
+        profitability: isProfitable ? 100 : 0,
+        abandonmentRisk: '0%',
+        totalZones,
+        healthyZones: totalZones
+      };
+    }
+    
+    const latest = history[history.length - 1];
+    const totalZones = params.zoneDensity;
+    const abandonmentRisk = ((latest.zoneAtRisk + latest.zoneAbandoned) / totalZones * 100).toFixed(1);
+    
+    return {
+      totalArea: latest.totalArea,
+      avgSentiment: latest.avgSentiment,
+      ffbPrice: latest.ffbPrice,
+      profitability: latest.profitability * 100,
+      abandonmentRisk: `${abandonmentRisk}%`,
+      totalZones,
+      healthyZones: latest.zoneHealthy
+    };
+  }, [history, selectedState, calculateFFBPrice, calculateProfitability, params.zoneDensity]);
+
+  // ==================== FIXED GRAPH DATA GENERATORS ====================
+  const getGraphData = useCallback((graphType) => {
+    if (!history.length) {
+      // Generate initial data points for empty state
+      const initialPoints = [];
+      const mode = getCurrentMode();
+      const displayPoints = Math.min(10, mode.total);
+      
+      for (let i = 0; i < displayPoints; i++) {
+        const ffbPrice = calculateFFBPrice();
+        const breakeven = stateBaselines[selectedState]?.breakevenPrice || 4300;
+        const isProfitable = ffbPrice >= breakeven;
+        const totalZones = params.zoneDensity;
+        const baseArea = totalZones * params.baseAreaPerZone;
+        
+        initialPoints.push({
+          period: i,
+          label: getTimeLabel(i),
+          area: baseArea,
+          sentiment: (stateBaselines[selectedState]?.sentimentBias || 0.5) * 100,
+          zones: totalZones,
+          cpoPrice: params.cpoPrice,
+          ffbPrice: parseFloat(ffbPrice.toFixed(2)),
+          breakeven: breakeven,
+          profitability: isProfitable ? 100 : 0,
+          attrition: params.attritionRate,
+          contagion: params.contagionStrength,
+          atRisk: 0,
+          abandoned: 0,
+          growthRate: params.growthRate,
+          actualGrowth: 0
+        });
+      }
+      return initialPoints;
+    }
+    
+    // Use actual simulation data
+    const recentHistory = history.slice(-20);
+    
+    switch(graphType) {
+      case 'areaTrend':
+        return recentHistory.map(h => ({
+          period: h.period,
+          label: h.timeLabel,
+          area: Math.max(0, Math.round(h.totalArea)),
+          sentiment: Math.max(0, Math.min(100, parseFloat((h.avgSentiment * 100).toFixed(1)))),
+          zones: Math.max(0, h.zoneHealthy)
+        }));
+        
+      case 'priceAnalysis':
+        return recentHistory.map(h => ({
+          period: h.period,
+          label: h.timeLabel,
+          cpoPrice: Math.max(0, Math.round(h.cpoPrice)),
+          ffbPrice: Math.max(0, parseFloat(h.ffbPrice.toFixed(2))),
+          breakeven: stateBaselines[selectedState]?.breakevenPrice || 4300,
+          profitability: Math.max(0, Math.min(100, parseFloat((h.profitability * 100).toFixed(1))))
+        }));
+        
+      case 'riskMetrics':
+        return recentHistory.slice(-15).map(h => ({
+          period: h.period,
+          label: h.timeLabel,
+          attrition: Math.max(0, Math.min(100, parseFloat(h.attritionRate.toFixed(1)))),
+          contagion: Math.max(0, Math.min(100, parseFloat(h.contagionStrength.toFixed(1)))),
+          atRisk: Math.max(0, h.zoneAtRisk),
+          abandoned: Math.max(0, h.zoneAbandoned)
+        }));
+        
+      case 'zoneDistribution':
+        const latest = history[history.length - 1];
+        const distribution = [
+          { name: 'Healthy', value: Math.max(0, latest.zoneHealthy), color: '#10b981' },
+          { name: 'At Risk', value: Math.max(0, latest.zoneAtRisk), color: '#f59e0b' },
+          { name: 'Abandoned', value: Math.max(0, latest.zoneAbandoned), color: '#ef4444' },
+          { name: 'Recovering', value: Math.max(0, latest.zoneRecovering), color: '#3b82f6' }
+        ].filter(item => item.value > 0);
+        
+        // If all values are 0, show a placeholder
+        if (distribution.length === 0) {
+          return [{ name: 'No Data', value: 1, color: '#9ca3af' }];
+        }
+        
+        return distribution;
+        
+      case 'growthAnalysis':
+        return recentHistory.slice(-15).map((h, i) => {
+          let actualGrowth = 0;
+          if (i > 0 && recentHistory[i-1].totalArea > 0) {
+            actualGrowth = ((h.totalArea - recentHistory[i-1].totalArea) / recentHistory[i-1].totalArea * 100);
+          }
+          
+          return {
+            period: h.period,
+            label: h.timeLabel,
+            growthRate: Math.max(0, Math.min(100, parseFloat(h.growthRate.toFixed(1)))),
+            actualGrowth: Math.max(-50, Math.min(100, parseFloat(actualGrowth.toFixed(1)))),
+            area: Math.max(0, Math.round(h.totalArea))
+          };
+        });
+        
+      default:
+        return [];
+    }
+  }, [history, selectedState, params, getCurrentMode, getTimeLabel, calculateFFBPrice]);
+
+  // ==================== GRAPH RENDERER ====================
+  const renderGraph = (graphType) => {
+    const data = getGraphData(graphType);
+    
+    if (!data.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow h-72 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <Filter className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+            <p>Collecting simulation data...</p>
+            <p className="text-sm mt-1">Run simulation to see graphs</p>
+          </div>
+        </div>
+      );
+    }
+    
+    switch(graphType) {
+      case 'areaTrend':
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              Area & Sentiment Trend
+            </h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="label" 
+                    stroke="#6b7280"
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    interval="preserveStartEnd"
+                    minTickGap={10}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    stroke="#6b7280"
+                    tickFormatter={(value) => value.toLocaleString()}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    stroke="#6b7280"
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'area') return [`${value.toLocaleString()} Ha`, 'Total Area'];
+                      if (name === 'sentiment') return [`${value.toFixed(1)}%`, 'Sentiment'];
+                      if (name === 'zones') return [`${value} zones`, 'Healthy Zones'];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Period: ${label}`}
+                    contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}
+                  />
+                  <Legend />
+                  <Area 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="area" 
+                    name="Total Area (Ha)"
+                    stroke="#10b981" 
+                    fill="#10b981" 
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="sentiment" 
+                    name="Sentiment %"
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={{ r: 2 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      case 'priceAnalysis':
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-blue-600" />
+              Price Analysis
+            </h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="label" 
+                    stroke="#6b7280"
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    interval="preserveStartEnd"
+                    minTickGap={10}
+                  />
+                  <YAxis 
+                    stroke="#6b7280" 
+                    tickFormatter={(value) => `₹${value.toLocaleString()}`}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (['cpoPrice', 'ffbPrice', 'breakeven'].includes(name)) {
+                        return [`₹${value.toLocaleString()}`, name];
+                      }
+                      if (name === 'profitability') return [`${value.toFixed(1)}%`, 'Profitability'];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Period: ${label}`}
+                    contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="ffbPrice" 
+                    name="FFB Price (₹)"
+                    fill="#8884d8"
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="cpoPrice" 
+                    name="CPO Price (₹)"
+                    stroke="#ff7300"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="breakeven" 
+                    name="Breakeven (₹)"
+                    stroke="#00c49f"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      case 'riskMetrics':
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              Risk Metrics
+            </h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="label" 
+                    stroke="#6b7280"
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    interval="preserveStartEnd"
+                    minTickGap={10}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    stroke="#6b7280"
+                    allowDecimals={false}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    stroke="#6b7280"
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'atRisk' || name === 'abandoned') return [`${value} zones`, name];
+                      if (name === 'attrition' || name === 'contagion') return [`${value}%`, name];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Period: ${label}`}
+                    contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}
+                  />
+                  <Legend />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="atRisk" 
+                    name="At-Risk Zones"
+                    fill="#f59e0b"
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar 
+                    yAxisId="left"
+                    dataKey="abandoned" 
+                    name="Abandoned Zones"
+                    fill="#ef4444"
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="attrition" 
+                    name="Attrition Rate %"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      case 'zoneDistribution':
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <Users className="w-5 h-5 text-purple-600" />
+              Zone Status Distribution
+            </h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent, value }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value, name, props) => {
+                      const total = data.reduce((sum, item) => sum + item.value, 0);
+                      const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                      return [`${value} zones (${percentage}%)`, props.payload.name];
+                    }}
+                    contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      case 'growthAnalysis':
+        return (
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+            <h3 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+              <Leaf className="w-5 h-5 text-green-600" />
+              Growth Analysis
+            </h3>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="label" 
+                    stroke="#6b7280"
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    interval="preserveStartEnd"
+                    minTickGap={10}
+                  />
+                  <YAxis 
+                    stroke="#6b7280" 
+                    tickFormatter={(value) => `${value}%`}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'actualGrowth' || name === 'growthRate') {
+                        return [`${value.toFixed(1)}%`, name];
+                      }
+                      if (name === 'area') return [`${value.toLocaleString()} Ha`, 'Total Area'];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `Period: ${label}`}
+                    contentStyle={{ borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}
+                  />
+                  <Legend />
+                  <Bar 
+                    dataKey="actualGrowth" 
+                    name="Actual Growth %"
+                    fill="#00c49f"
+                    barSize={20}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="growthRate" 
+                    name="Growth Rate %"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
   };
 
-  // Cleanup on unmount
+  // ==================== DETERMINE VISIBLE GRAPHS ====================
+  const visibleGraphs = useMemo(() => {
+    const graphs = [];
+    
+    // Always show area trend if we have data
+    if (history.length > 0) {
+      graphs.push('areaTrend');
+    }
+    
+    // Show price analysis if CPO price is selected
+    if (selectedParams.includes('cpoPrice')) {
+      graphs.push('priceAnalysis');
+    }
+    
+    // Show risk metrics if risk parameters are selected
+    const riskParams = selectedParams.filter(id => 
+      ['attritionRate', 'contagionStrength', 'shockProbability'].includes(id)
+    );
+    if (riskParams.length > 0) {
+      graphs.push('riskMetrics');
+    }
+    
+    // Show zone distribution if we have zone data
+    if (history.length > 0) {
+      graphs.push('zoneDistribution');
+    }
+    
+    // Show growth analysis if growth rate is selected
+    if (selectedParams.includes('growthRate')) {
+      graphs.push('growthAnalysis');
+    }
+    
+    // Ensure we have at least one graph
+    if (graphs.length === 0) {
+      graphs.push('areaTrend');
+    }
+    
+    return graphs;
+  }, [selectedParams, history]);
+
+  // ==================== INITIALIZATION ====================
+  useEffect(() => {
+    initializeSimulation();
+  }, [initializeSimulation]);
+
   useEffect(() => {
     return () => {
       if (simulationIntervalRef.current) {
@@ -180,675 +1124,535 @@ const OilPalmExpansionSimulator = ({ selectedState = "All-India" }) => {
     };
   }, []);
 
-  // Get display data (animated or full)
-  const displayData = isSimulating ? animatedData : (hasSimulationRun ? fullSimulationData : []);
-  
-  // Check if we should show results
-  const shouldShowResults = hasSimulationRun || isSimulating;
-
-  // Scenario presets
-  const applyScenario = (scenario) => {
-    switch(scenario) {
-      case 'nmeo':
-        setParams({
-          startingYear: 2024,
-          simulationYears: 10,
-          newAreaPerYear: 65000,
-          OER: 19.42,
-          cpoPrice: 115715.58
-        });
-        break;
-      case 'optimistic':
-        setParams({
-          startingYear: 2024,
-          simulationYears: 10,
-          newAreaPerYear: 100000,
-          OER: 21.0,
-          cpoPrice: 125000
-        });
-        break;
-      case 'conservative':
-        setParams({
-          startingYear: 2024,
-          simulationYears: 10,
-          newAreaPerYear: 30000,
-          OER: 18.0,
-          cpoPrice: 100000
-        });
-        break;
-      case 'high-oer':
-        setParams({
-          startingYear: 2024,
-          simulationYears: 10,
-          newAreaPerYear: 75000,
-          OER: 22.0,
-          cpoPrice: 115715.58
-        });
-        break;
-    }
-    if (isSimulating) {
-      stopSimulation();
-    }
-    // Don't reset hasSimulationRun - let user decide when to run
-  };
-
-  // Get current data for display
-  const getDisplayData = () => {
-    if (isSimulating) return animatedData;
-    if (hasSimulationRun) return fullSimulationData;
-    return [];
-  };
-
-  // Calculate KPIs for the final year
-  const finalYearData = displayData.length > 0 ? displayData[displayData.length - 1] : null;
-
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-      <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-900 via-green-800 to-emerald-700 text-white p-4 sticky top-0 z-10 shadow-xl">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+              <Zap className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Oil Palm Expansion Simulator</h3>
-              <p className="text-sm opacity-90">
-                Simulate FFB & CPO production based on area expansion patterns
-              </p>
+              <h1 className="text-xl font-bold">Oil Palm Simulation Dashboard</h1>
+              <p className="text-emerald-200 text-sm">Real-time forest-fire model simulation</p>
             </div>
           </div>
-          <div className="text-xs px-2 py-1 bg-white/20 rounded">
-            {isSimulating ? 'ANIMATING...' : hasSimulationRun ? 'SIMULATION COMPLETE' : 'READY TO SIMULATE'}
+          
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-all backdrop-blur-sm"
+            >
+              <Settings className="w-5 h-5" />
+              <span>{showSidebar ? 'Hide Controls' : 'Show Controls'}</span>
+            </button>
+            
+            <div className={`text-sm px-3 py-2 rounded-lg font-mono transition-all ${
+              isSimulating 
+                ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg' 
+                : 'bg-white/20 backdrop-blur-sm'
+            }`}>
+              {isSimulating ? '🚀 SIMULATING' : '📊 READY'}
+            </div>
           </div>
         </div>
       </div>
-      
-      <div className="p-6">
-        {/* Simulation Controls with Animation */}
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200 p-4 mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+
+      <div className="flex max-w-7xl mx-auto">
+        {/* Left Sidebar - Parameter Controls */}
+        <div className={`h-full bg-white/90 backdrop-blur-sm border-r border-gray-200 shadow-2xl z-40 transition-all mb-4 duration-300 ${
+          showSidebar ? 'translate-x-0' : '-translate-x-full'
+        }`} style={{ width: '400px' }}>
+          <div className="h-full p-6">
+            <div className="flex items-center justify-between mb-6 sticky top-0 bg-white/90 backdrop-blur-sm pt-2 pb-4">
+              <h2 className="text-xl font-bold text-gray-800">Simulation Controls</h2>
               <button
-                onClick={startSimulation}
-                className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all ${
-                  isSimulating 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                    : 'bg-[#003366] hover:bg-[#00509e] text-white'
-                }`}
+                onClick={() => setShowSidebar(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                {isSimulating ? (
-                  <>
-                    <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Stop Simulation ({currentSimulationYear}/{params.simulationYears})
-                  </>
-                ) : hasSimulationRun ? (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Run Again
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Start Simulation
-                  </>
-                )}
+                <X className="w-5 h-5" />
               </button>
-              
-              <button
-                onClick={resetSimulation}
-                className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
-                disabled={isSimulating || !hasSimulationRun}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Reset
-              </button>
-              
-              {isSimulating && (
-                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded border">
-                  <div className="text-sm text-gray-700">
-                    Year: <span className="font-bold">{params.startingYear + currentSimulationYear - 1}</span>
+            </div>
+            
+            {/* Simulation Controls */}
+            <div className="space-y-6">
+              {/* Basic Controls */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100 shadow-sm">
+                <h3 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Simulation Settings
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Simulation Mode
+                    </label>
+                    <select
+                      value={simulationMode}
+                      onChange={(e) => setSimulationMode(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={isSimulating}
+                    >
+                      {SIMULATION_MODES.map(mode => (
+                        <option key={mode.id} value={mode.id}>
+                          {mode.name} ({mode.label}s)
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="w-32">
-                    <input
-                      type="range"
-                      min="300"
-                      max="2000"
-                      step="100"
-                      value={animationSpeed}
-                      onChange={(e) => setAnimationSpeed(parseInt(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="text-xs text-gray-500">Speed: {animationSpeed}ms/year</div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Simulation Speed
+                    </label>
+                    <select
+                      value={simulationSpeed}
+                      onChange={(e) => handleSpeedChange(parseInt(e.target.value))}
+                      className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {SPEED_PRESETS.map(preset => (
+                        <option key={preset.id} value={preset.value}>
+                          {preset.icon} {preset.name} ({preset.value}ms)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={startSimulation}
+                      disabled={selectedParams.length < 2}
+                      className={`flex-1 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-all ${
+                        selectedParams.length < 2
+                          ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                          : isSimulating 
+                          ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg' 
+                          : 'bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white shadow-lg'
+                      }`}
+                    >
+                      {isSimulating ? (
+                        <>
+                          <Pause className="w-5 h-5" />
+                          Stop Simulation
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-5 h-5" />
+                          Start Simulation
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      onClick={resetSimulation}
+                      className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                      disabled={isSimulating}
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Parameter Search & Selection */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <Search className="w-5 h-5" />
+                  Select Parameters
+                </h3>
+                
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search parameters..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                  />
+                </div>
+                
+                {searchQuery ? (
+                  <div className="space-y-3 mb-4 max-h-60 overflow-y-auto">
+                    {filteredParameters.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">No parameters found</p>
+                    ) : (
+                      filteredParameters.map(param => (
+                        <div
+                          key={param.id}
+                          className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                            selectedParams.includes(param.id)
+                              ? 'border-blue-500 bg-blue-50 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleParamToggle(param.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="text-blue-600">
+                                {param.icon}
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-800">{param.name}</div>
+                                <div className="text-xs text-gray-600">{param.description}</div>
+                              </div>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selectedParams.includes(param.id)
+                                ? 'bg-blue-500 border-blue-500'
+                                : 'border-gray-300'
+                            }`}>
+                              {selectedParams.includes(param.id) && (
+                                <div className="w-2 h-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-3">Available parameters:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {availableParameters.map(param => (
+                        <div
+                          key={param.id}
+                          className={`p-2 rounded-lg border cursor-pointer transition-all text-center ${
+                            selectedParams.includes(param.id)
+                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700'
+                          }`}
+                          onClick={() => handleParamToggle(param.id)}
+                          title={param.description}
+                        >
+                          <div className="text-xs font-medium truncate">{param.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedParams.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-sm font-medium text-gray-700 mb-2">Selected Parameters:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedParams.map(paramId => {
+                        const param = availableParameters.find(p => p.id === paramId);
+                        if (!param) return null;
+                        
+                        return (
+                          <div
+                            key={paramId}
+                            className="flex items-center gap-2 bg-gradient-to-r from-blue-100 to-blue-50 text-blue-800 px-3 py-1.5 rounded-full text-sm shadow-sm"
+                          >
+                            <span>{param.name}</span>
+                            <button
+                              onClick={() => handleParamToggle(paramId)}
+                              className="hover:text-blue-900 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedParams.length < 2 && selectedParams.length > 0 && (
+                  <div className="mt-4 text-sm text-red-600 bg-red-50 p-2 rounded-lg">
+                    ⚠️ Select at least 2 parameters to start simulation
+                  </div>
+                )}
+              </div>
+              
+              {/* Parameter Value Controls */}
+              {selectedParams.length > 0 && (
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                  <h3 className="font-bold text-gray-800 mb-4">Adjust Parameter Values</h3>
+                  <p className="text-sm text-gray-600 mb-4">Values can be changed during simulation</p>
+                  
+                  <div className="space-y-4">
+                    {selectedParams.map(paramId => {
+                      const param = availableParameters.find(p => p.id === paramId);
+                      if (!param) return null;
+                      
+                      const value = params[paramId];
+                      const percentageParams = ['attritionRate', 'contagionStrength', 'growthRate', 'shockProbability', 'subsidyImpact'];
+                      
+                      return (
+                        <div key={paramId} className="space-y-2 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex justify-between items-center">
+                            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                              {param.icon}
+                              {param.name}
+                            </label>
+                            <span className="text-sm font-bold bg-white px-3 py-1 rounded-lg border border-gray-200">
+                              {percentageParams.includes(paramId) ? `${value}${param.unit}` : 
+                               paramId === 'cpoPrice' ? `₹${value.toLocaleString()}${param.unit}` :
+                               `${value}${param.unit}`}
+                            </span>
+                          </div>
+                          
+                          <input
+                            type="range"
+                            min={param.min}
+                            max={param.max}
+                            step={param.step}
+                            value={value}
+                            onChange={(e) => handleParamChange(paramId, parseFloat(e.target.value))}
+                            className="w-full accent-blue-600"
+                          />
+                          
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>{param.min}{param.unit}</span>
+                            <span className="font-medium">Current</span>
+                            <span>{param.max}{param.unit}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
             </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="text-sm bg-white px-3 py-2 rounded border border-gray-300">
-                <span className="text-gray-600">Status:</span>
-                <span className={`font-bold ml-2 ${
-                  isSimulating ? 'text-green-600' : 
-                  hasSimulationRun ? 'text-blue-600' : 'text-gray-600'
-                }`}>
-                  {isSimulating 
-                    ? `Simulating... ${Math.round((currentSimulationYear / params.simulationYears) * 100)}%` 
-                    : hasSimulationRun ? 'Complete' : 'Ready to Start'}
-                </span>
+          </div>
+        </div>
+
+        {/* Main Content - Graphs */}
+        <div className={`flex-1 p-6 transition-all duration-300 ${showSidebar ? 'ml-[20px]' : 'ml-0'}`}>
+          {/* Floating Sidebar Toggle */}
+          {!showSidebar && (
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="fixed left-4 top-24 bg-white border border-gray-300 shadow-lg rounded-r-lg p-3 hover:bg-gray-50 z-30 transition-all hover:shadow-xl"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          )}
+          
+          {/* Current Status */}
+          <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-600">Current Period</div>
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <span className="text-blue-600 font-bold">{currentPeriod}</span>
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-800 mb-1">
+                  {getTimeLabel(currentPeriod)}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {getCurrentMode().label} {currentPeriod + 1}
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-white to-emerald-50 border border-emerald-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-600">Total Area</div>
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <Leaf className="w-5 h-5 text-emerald-600" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-800 mb-1">
+                  {currentKPIs.totalArea.toLocaleString()} Ha
+                </div>
+                <div className="text-sm text-gray-500">
+                  {currentKPIs.healthyZones} of {currentKPIs.totalZones} zones healthy
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-white to-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-600">FFB Price</div>
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-800 mb-1">
+                  ₹{parseFloat(currentKPIs.ffbPrice).toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {currentKPIs.profitability > 50 ? 'Profitable' : 'Unprofitable'} ({currentKPIs.profitability.toFixed(1)}%)
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-white to-amber-50 border border-amber-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-medium text-gray-600">Risk Level</div>
+                  <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-800 mb-1">
+                  {currentKPIs.abandonmentRisk}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {currentKPIs.abandonmentRisk !== '0%' ? 'At-risk zones detected' : 'All zones healthy'}
+                </div>
               </div>
             </div>
           </div>
           
+          {/* Progress Bar */}
           {isSimulating && (
-            <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="h-2 rounded-full bg-green-500 transition-all duration-300"
-                  style={{ width: `${(currentSimulationYear / params.simulationYears) * 100}%` }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600 mt-1">
-                <span>Year {params.startingYear}</span>
-                <span>Year {params.startingYear + currentSimulationYear - 1}</span>
-                <span>Year {params.startingYear + params.simulationYears - 1}</span>
+            <div className="mb-8 bg-gradient-to-r from-white to-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Simulation Progress</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span className="font-medium">Start: {getTimeLabel(0)}</span>
+                  <span className="font-bold text-blue-600">Current: {getTimeLabel(currentPeriod)}</span>
+                  <span className="font-medium">End: {getTimeLabel(getCurrentMode().total)}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-3 rounded-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 transition-all duration-500 shadow-inner"
+                    style={{ width: `${Math.min(100, (currentPeriod / getCurrentMode().total) * 100)}%` }}
+                  ></div>
+                </div>
+                <div className="text-sm text-gray-500 text-center">
+                  {currentPeriod} of {getCurrentMode().total} {getCurrentMode().label}s completed
+                  ({((currentPeriod / getCurrentMode().total) * 100).toFixed(1)}%)
+                </div>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Collapsible Simulation Parameters */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg mb-6">
-          <button
-            onClick={() => setShowParams(!showParams)}
-            className="w-full text-left px-4 py-3 font-semibold text-gray-800 flex justify-between items-center hover:bg-gray-100 rounded-t-lg transition-colors"
-          >
-            <span>Simulation Parameters</span>
-            <span className="text-xl font-mono">{showParams ? "−" : "+"}</span>
-          </button>
-
-          {showParams && (
-            <div className="p-4 border-t">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Simulation Years
-                  </label>
-                  <select
-                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                    value={params.simulationYears}
-                    onChange={e => handleParamChange("simulationYears", e.target.value)}
-                    disabled={isSimulating}
+          
+          {/* Graphs Grid */}
+          {visibleGraphs.length === 0 ? (
+            <div className="text-center py-16 bg-gradient-to-br from-white to-gray-50 border-2 border-dashed border-gray-300 rounded-2xl shadow-inner">
+              <div className="max-w-md mx-auto">
+                <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
+                  <Filter className="w-12 h-12 text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">Ready to Simulate</h3>
+                <p className="text-gray-600 mb-8 text-lg">
+                  Select parameters and start simulation to visualize the forest-fire model dynamics
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="text-blue-600 font-bold text-lg mb-2">1</div>
+                    <div className="font-medium text-gray-800">Select Parameters</div>
+                    <div className="text-sm text-gray-600 mt-1">Choose at least 2 parameters to monitor</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="text-blue-600 font-bold text-lg mb-2">2</div>
+                    <div className="font-medium text-gray-800">Adjust Values</div>
+                    <div className="text-sm text-gray-600 mt-1">Set parameter values using sliders</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div className="text-blue-600 font-bold text-lg mb-2">3</div>
+                    <div className="font-medium text-gray-800">Start Simulation</div>
+                    <div className="text-sm text-gray-600 mt-1">Click play to begin the simulation</div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => setShowSidebar(true)}
+                    className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all"
                   >
-                    {[5, 10, 15, 20].map(n => (
-                      <option key={n} value={n}>{n} Years</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    New Area per Year (Ha)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                    value={params.newAreaPerYear}
-                    onChange={e => handleParamChange("newAreaPerYear", e.target.value)}
-                    min="1000"
-                    step="1000"
-                    disabled={isSimulating}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    OER (%)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                    value={params.OER}
-                    step="0.1"
-                    min="10"
-                    max="25"
-                    onChange={e => handleParamChange("OER", e.target.value)}
-                    disabled={isSimulating}
-                  />
-                  <div className="text-xs text-gray-500 mt-1">Oil Extraction Ratio</div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CPO Net Price (₹/MT)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border border-gray-300 rounded text-sm"
-                    value={params.cpoPrice}
-                    onChange={e => handleParamChange("cpoPrice", e.target.value)}
-                    min="50000"
-                    max="200000"
-                    step="1000"
-                    disabled={isSimulating}
-                  />
-                  <div className="text-xs text-gray-500 mt-1">From Govt. pricing order</div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    FFB Price (₹/MT)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border border-gray-300 rounded text-sm bg-gray-50"
-                    value={calculateFFBPrice()}
-                    readOnly
-                  />
-                  <div className="text-xs text-gray-500 mt-1">Auto-calculated (14.61% of CPO)</div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State Baseline Area (Ha)
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border border-gray-300 rounded text-sm bg-gray-50"
-                    value={stateBaselines[selectedState] || 0}
-                    readOnly
-                  />
-                  <div className="text-xs text-gray-500 mt-1">Existing mature area for {selectedState}</div>
+                    <Settings className="w-5 h-5" />
+                    Open Control Panel
+                  </button>
+                  <button
+                    onClick={startSimulation}
+                    disabled={selectedParams.length < 2}
+                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
+                      selectedParams.length < 2
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-emerald-600 to-green-600 text-white hover:from-emerald-700 hover:to-green-700 shadow-lg hover:shadow-xl'
+                    }`}
+                  >
+                    <Play className="w-5 h-5" />
+                    Start Simulation
+                  </button>
                 </div>
               </div>
-
-              {/* Scenario Buttons */}
-              <div className="border-t pt-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-3">Quick Scenarios:</h5>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => applyScenario('nmeo')}
-                    className="px-4 py-2 bg-[#003366] text-white rounded text-sm font-medium hover:bg-[#00509e] disabled:opacity-50"
-                    disabled={isSimulating}
-                  >
-                    Reset to NMEO Targets
-                  </button>
-                  
-                  <button
-                    onClick={() => applyScenario('optimistic')}
-                    className="px-4 py-2 border border-green-300 text-green-700 bg-green-50 rounded text-sm font-medium hover:bg-green-100 disabled:opacity-50"
-                    disabled={isSimulating}
-                  >
-                    Optimistic Scenario
-                  </button>
-                  
-                  <button
-                    onClick={() => applyScenario('conservative')}
-                    className="px-4 py-2 border border-amber-300 text-amber-700 bg-amber-50 rounded text-sm font-medium hover:bg-amber-100 disabled:opacity-50"
-                    disabled={isSimulating}
-                  >
-                    Conservative Scenario
-                  </button>
-                  
-                  <button
-                    onClick={() => applyScenario('high-oer')}
-                    className="px-4 py-2 border border-purple-300 text-purple-700 bg-purple-50 rounded text-sm font-medium hover:bg-purple-100 disabled:opacity-50"
-                    disabled={isSimulating}
-                  >
-                    High OER Scenario
-                  </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+              {visibleGraphs.map(graphType => (
+                <div key={graphType}>
+                  {renderGraph(graphType)}
                 </div>
-                <div className="text-xs text-gray-500 mt-2">
-                  Click a scenario to load preset parameters, then click "Start Simulation"
+              ))}
+            </div>
+          )}
+          
+          {/* Events Log */}
+          {events.length > 0 && (
+            <div className="mt-8 bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                Simulation Events
+              </h3>
+              <div className="max-h-60 overflow-y-auto">
+                <div className="space-y-3">
+                  {events.slice(-8).reverse().map((event, idx) => (
+                    <div key={idx} className={`p-4 rounded-xl border-l-4 shadow-sm hover:shadow-md transition-all ${
+                      event.type === 'price_shock' 
+                        ? 'border-red-500 bg-gradient-to-r from-red-50 to-white' 
+                        : event.type === 'abandonment'
+                        ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-white'
+                        : event.type === 'recovery_complete'
+                        ? 'border-green-500 bg-gradient-to-r from-green-50 to-white'
+                        : 'border-blue-500 bg-gradient-to-r from-blue-50 to-white'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            event.type === 'price_shock' ? 'bg-red-100' : 
+                            event.type === 'abandonment' ? 'bg-orange-100' :
+                            event.type === 'recovery_complete' ? 'bg-green-100' : 'bg-blue-100'
+                          }`}>
+                            {event.type === 'price_shock' ? '⚡' : 
+                             event.type === 'abandonment' ? '🔥' :
+                             event.type === 'recovery_complete' ? '🌱' : '📈'}
+                          </div>
+                          <div>
+                            <span className="font-bold text-gray-800">
+                              {getTimeLabel(event.period)}
+                            </span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              - {event.type === 'price_shock' ? 'Price Shock' : 
+                                 event.type === 'abandonment' ? 'Abandonment' :
+                                 event.type === 'recovery_complete' ? 'Recovery' :
+                                 event.type === 'expansion' ? 'Expansion' : 'Risk Increase'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+                          event.type === 'price_shock' 
+                            ? 'bg-red-100 text-red-800' 
+                            : event.type === 'abandonment'
+                            ? 'bg-orange-100 text-orange-800'
+                            : event.type === 'recovery_complete'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {event.type === 'price_shock' 
+                            ? `${(event.magnitude * 100).toFixed(0)}% drop`
+                            : `${event.zones} zones`}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-3 pl-13">{event.description}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           )}
         </div>
-
-        {/* Results Section - ONLY SHOW AFTER SIMULATION RUNS */}
-        {shouldShowResults ? (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 transition-all duration-300">
-                <div className="text-xs text-blue-600 font-medium mb-1">Total Area (Ha)</div>
-                <div className="text-xl font-bold text-blue-700 transition-all duration-500">
-                  {finalYearData ? finalYearData.totalArea.toLocaleString() : '0'}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {isSimulating ? `Year ${params.startingYear + currentSimulationYear - 1}` : 'Final'}
-                </div>
-              </div>
-              
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200 transition-all duration-300">
-                <div className="text-xs text-green-600 font-medium mb-1">Mature Area (Ha)</div>
-                <div className="text-xl font-bold text-green-700 transition-all duration-500">
-                  {finalYearData ? finalYearData.matureArea.toLocaleString() : '0'}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Productive area
-                </div>
-              </div>
-              
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 transition-all duration-300">
-                <div className="text-xs text-purple-600 font-medium mb-1">FFB Production</div>
-                <div className="text-xl font-bold text-purple-700 transition-all duration-500">
-                  {finalYearData ? `${(finalYearData.totalFFB / 1000).toFixed(1)}K MT` : '0 MT'}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Fresh Fruit Bunches
-                </div>
-              </div>
-              
-              <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 transition-all duration-300">
-                <div className="text-xs text-amber-600 font-medium mb-1">CPO Production</div>
-                <div className="text-xl font-bold text-amber-700 transition-all duration-500">
-                  {finalYearData ? `${(finalYearData.totalCPO / 1000).toFixed(1)}K MT` : '0 MT'}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Crude Palm Oil
-                </div>
-              </div>
-              
-              <div className="bg-cyan-50 p-4 rounded-lg border border-cyan-200 transition-all duration-300">
-                <div className="text-xs text-cyan-600 font-medium mb-1">FFB Price</div>
-                <div className="text-xl font-bold text-cyan-700 transition-all duration-500">
-                  ₹{finalYearData ? parseFloat(finalYearData.ffbPrice).toLocaleString() : '0'}/MT
-                </div>
-                <div className="text-xs text-gray-500">
-                  Auto-calculated
-                </div>
-              </div>
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {/* Area & CPO Production Chart with Animation */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-300">
-                <h4 className="font-bold text-gray-800 mb-4">
-                  Area & CPO Production Trend
-                  {isSimulating && (
-                    <span className="ml-2 text-sm text-green-600 animate-pulse">
-                      • LIVE
-                    </span>
-                  )}
-                </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={getDisplayData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="year" stroke="#6b7280" />
-                      <YAxis yAxisId="left" stroke="#6b7280" />
-                      <YAxis yAxisId="right" orientation="right" stroke="#6b7280" />
-                      <Tooltip 
-                        formatter={(value, name) => {
-                          if (name === 'totalCPO') {
-                            return [`${(value / 1000).toFixed(1)}K MT`, 'CPO Production'];
-                          }
-                          if (name.includes('Area')) {
-                            return [`${(value / 1000).toFixed(1)}K Ha`, name];
-                          }
-                          return [value, name];
-                        }}
-                      />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="totalArea" name="Total Area (Ha)" fill="#3b82f6">
-                        {isSimulating && getDisplayData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index === getDisplayData().length - 1 ? '#1d4ed8' : '#3b82f6'} />
-                        ))}
-                      </Bar>
-                      <Line yAxisId="right" type="monotone" dataKey="totalCPO" name="CPO (MT)" stroke="#10b981" strokeWidth={2} dot={{ r: isSimulating ? 4 : 3 }} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-                {isSimulating && getDisplayData().length > 0 && (
-                  <div className="text-xs text-gray-500 mt-2">
-                    Current year: {getDisplayData()[getDisplayData().length - 1].year} | 
-                    Area: {(getDisplayData()[getDisplayData().length - 1].totalArea / 1000).toFixed(1)}K Ha | 
-                    CPO: {(getDisplayData()[getDisplayData().length - 1].totalCPO / 1000).toFixed(1)}K MT
-                  </div>
-                )}
-              </div>
-
-              {/* Area Breakdown Chart with Animation */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 transition-all duration-300">
-                <h4 className="font-bold text-gray-800 mb-4">
-                  Area Composition
-                  {isSimulating && (
-                    <span className="ml-2 text-sm text-green-600 animate-pulse">
-                      • UPDATING
-                    </span>
-                  )}
-                </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={getDisplayData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="year" stroke="#6b7280" />
-                      <YAxis stroke="#6b7280" />
-                      <Tooltip 
-                        formatter={(value) => [`${(value / 1000).toFixed(1)}K Ha`, 'Area']}
-                      />
-                      <Legend />
-                      <Bar dataKey="matureArea" name="Mature Area" stackId="a" fill="#10b981">
-                        {isSimulating && getDisplayData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index === getDisplayData().length - 1 ? '#059669' : '#10b981'} />
-                        ))}
-                      </Bar>
-                      <Bar dataKey="immatureArea" name="Immature Area" stackId="a" fill="#f59e0b">
-                        {isSimulating && getDisplayData().map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index === getDisplayData().length - 1 ? '#d97706' : '#f59e0b'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                {isSimulating && getDisplayData().length > 0 && (
-                  <div className="text-xs text-gray-500 mt-2">
-                    Mature: {(getDisplayData()[getDisplayData().length - 1].matureArea / 1000).toFixed(1)}K Ha | 
-                    Immature: {(getDisplayData()[getDisplayData().length - 1].immatureArea / 1000).toFixed(1)}K Ha
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Production Chart with Animation */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 transition-all duration-300">
-              <h4 className="font-bold text-gray-800 mb-4">
-                Production Trend
-                {isSimulating && (
-                  <span className="ml-2 text-sm text-green-600 animate-pulse">
-                    • ANIMATING
-                  </span>
-                )}
-              </h4>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={getDisplayData()}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="year" stroke="#6b7280" />
-                    <YAxis stroke="#6b7280" />
-                    <Tooltip 
-                      formatter={(value) => [`${(value / 1000).toFixed(1)}K MT`, 'Production']}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="totalFFB" 
-                      name="FFB Production" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={2} 
-                      dot={{ r: isSimulating ? 4 : 3 }}
-                      animationDuration={isSimulating ? animationSpeed : 1000}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="totalCPO" 
-                      name="CPO Production" 
-                      stroke="#ef4444" 
-                      strokeWidth={2} 
-                      dot={{ r: isSimulating ? 4 : 3 }}
-                      animationDuration={isSimulating ? animationSpeed : 1000}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              {isSimulating && getDisplayData().length > 0 && (
-                <div className="text-xs text-gray-500 mt-2">
-                  FFB: {(getDisplayData()[getDisplayData().length - 1].totalFFB / 1000).toFixed(1)}K MT | 
-                  CPO: {(getDisplayData()[getDisplayData().length - 1].totalCPO / 1000).toFixed(1)}K MT
-                </div>
-              )}
-            </div>
-
-            {/* Detailed Data Table */}
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden transition-all duration-300">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h4 className="font-bold text-gray-800">Detailed Simulation Data</h4>
-                <div className="text-sm text-gray-500">
-                  {isSimulating ? 'Live updates' : 'Complete results'}
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Year</th>
-                      <th className="px-4 py-2 text-right">Total Area (Ha)</th>
-                      <th className="px-4 py-2 text-right">Mature Area (Ha)</th>
-                      <th className="px-4 py-2 text-right">FFB (MT)</th>
-                      <th className="px-4 py-2 text-right">CPO (MT)</th>
-                      <th className="px-4 py-2 text-right">Yield (MT/Ha)</th>
-                      <th className="px-4 py-2 text-right">FFB Price (₹/MT)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {getDisplayData().map((row, index) => (
-                      <tr 
-                        key={row.year} 
-                        className={`hover:bg-gray-50 ${isSimulating && index === getDisplayData().length - 1 ? 'bg-green-50' : ''}`}
-                      >
-                        <td className="px-4 py-2 font-medium">
-                          {row.year}
-                          {isSimulating && index === getDisplayData().length - 1 && (
-                            <span className="ml-2 text-xs text-green-600 animate-pulse">●</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2 text-right">{row.totalArea.toLocaleString()}</td>
-                        <td className="px-4 py-2 text-right">{row.matureArea.toLocaleString()}</td>
-                        <td className="px-4 py-2 text-right">{(row.totalFFB / 1000).toFixed(1)}K</td>
-                        <td className="px-4 py-2 text-right">{(row.totalCPO / 1000).toFixed(1)}K</td>
-                        <td className="px-4 py-2 text-right">{row.yieldPerHa}</td>
-                        <td className="px-4 py-2 text-right">₹{parseFloat(row.ffbPrice).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Summary Notes */}
-            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg transition-all duration-300">
-              <h4 className="font-bold text-blue-900 mb-3">
-                Simulation Insights for {selectedState}
-                {isSimulating && (
-                  <span className="ml-2 text-sm text-blue-600">• Live Analysis</span>
-                )}
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="text-sm text-gray-700">
-                  <div className="font-medium mb-2">Production Forecast:</div>
-                  <ul className="space-y-1 ml-5 list-disc">
-                    <li>
-                      {isSimulating 
-                        ? `Currently in Year ${params.startingYear + currentSimulationYear - 1}`
-                        : `Peak production reached in Year ${params.startingYear + 7}`}
-                    </li>
-                    <li>
-                      Average yield: {getDisplayData().length > 0 
-                        ? (getDisplayData().reduce((sum, year) => sum + parseFloat(year.yieldPerHa), 0) / getDisplayData().length).toFixed(1)
-                        : '0'} MT/Ha
-                    </li>
-                    <li>
-                      Total CPO production: {((getDisplayData().reduce((sum, year) => sum + year.totalCPO, 0)) / 1000000).toFixed(1)} lakh MT
-                    </li>
-                  </ul>
-                </div>
-                <div className="text-sm text-gray-700">
-                  <div className="font-medium mb-2">Area Expansion:</div>
-                  <ul className="space-y-1 ml-5 list-disc">
-                    <li>
-                      Total area expansion: {getDisplayData().reduce((sum, year) => sum + params.newAreaPerYear, 0).toLocaleString()} Ha
-                    </li>
-                    <li>
-                      Mature area growth: {stateBaselines[selectedState]?.toLocaleString() || '0'} → {finalYearData?.matureArea.toLocaleString() || '0'} Ha
-                    </li>
-                    <li>
-                      Annual new planting rate: {params.newAreaPerYear.toLocaleString()} Ha/year
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          /* Show only when simulation hasn't run - No preview data */
-          <div className="mb-6 p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
-            <div className="text-gray-500 mb-4">
-              <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Ready to Simulate</h3>
-            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Configure your parameters above, select a scenario, then click <strong>"Start Simulation"</strong> to see animated results.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="font-medium text-gray-800 mb-2">What Will You See?</div>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Year-by-year animated growth</li>
-                  <li>• FFB & CPO production increases</li>
-                  <li>• Area composition changes</li>
-                  <li>• Real-time data updates</li>
-                </ul>
-              </div>
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="font-medium text-gray-800 mb-2">Animation Features:</div>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Adjustable speed control</li>
-                  <li>• Live progress indicator</li>
-                  <li>• Current year highlighting</li>
-                  <li>• Pause/stop anytime</li>
-                </ul>
-              </div>
-              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                <div className="font-medium text-gray-800 mb-2">Current Setup:</div>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• {params.newAreaPerYear.toLocaleString()} Ha/year</li>
-                  <li>• {params.OER}% OER</li>
-                  <li>• ₹{params.cpoPrice.toLocaleString()}/MT CPO</li>
-                  <li>• {selectedState} state</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
-export default OilPalmExpansionSimulator;
+export default OilPalmForestFireSimulator;
