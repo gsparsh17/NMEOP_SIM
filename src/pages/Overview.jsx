@@ -24,6 +24,7 @@ import PriceTrendChart from "../components/charts/PriceTrendChart";
 import PalmOilPriceChart from "../components/charts/PalmOilPriceChart";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import CPOImportSimulator from "./CpoImportSimulator";
 
 // NewsAPI.org Configuration
 const NEWSAPI_KEY = "3a594c659a2245c18de3c8a6d4ea4143";
@@ -986,7 +987,6 @@ export default function Overview() {
             </button>
           </div>
         </div>
-
         <div className="p-6">
           {palmOilLoading ? (
             <div className="flex justify-center items-center py-12">
@@ -1169,6 +1169,9 @@ export default function Overview() {
           )}
         </div>
       </div>
+
+       <CPOImportSimulator/>
+
 
       {/* Alert Strips */}
       <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
