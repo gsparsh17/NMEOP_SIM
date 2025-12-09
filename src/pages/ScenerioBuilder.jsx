@@ -10,6 +10,7 @@ import {
   nmeoOpProgress
 } from "../data/staticData";
 import { useNavigate } from "react-router-dom";
+import TradeSimulationComponent from './TradeSimulationComponent'; // or wherever you place it
 
 export default function ScenarioBuilder() {
   // --- 1. State Management ---
@@ -2458,6 +2459,24 @@ export default function ScenarioBuilder() {
           </div>
         </div>
       )}
+
+<div className="mt-8">
+  <TradeSimulationComponent 
+    onSimulationComplete={(result) => {
+      // You can use the results to update your existing state
+      console.log('Trade simulation completed:', result);
+      
+      // Example: Update duty based on recommendations
+      if (result.india_recommended_policy) {
+        // Parse recommendations to adjust duty
+        const tariffRecommendations = result.india_recommended_policy.filter(rec => 
+          rec.includes('tariff') || rec.includes('duty')
+        );
+        // You could implement logic here to adjust duty/cess based on recommendations
+      }
+    }}
+  />
+</div>
 
     </div>
   );
