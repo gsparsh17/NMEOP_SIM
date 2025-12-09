@@ -30,11 +30,36 @@ export default function ScenarioBuilder() {
   const [inflationRate, setInflationRate] = useState(5.0); // percentage
   const [supplyChainCost, setSupplyChainCost] = useState(14.0);
   const [supplyChainInflationRate, setSupplyChainInflationRate] = useState(5.0);
-  const [safeLandedThreshold, setSafeLandedThreshold] = useState(110.0);
-  const [retailPriceThreshold, setRetailPriceThreshold] = useState(161.0);
+  const [safeLandedThreshold, setSafeLandedThreshold] = useState(4800.0);
+  const [retailPriceThreshold, setRetailPriceThreshold] = useState(6000.0);
   const [simulationYears, setSimulationYears] = useState(5);
   const [startYear, setStartYear] = useState(2025);
   const [multiYearResults, setMultiYearResults] = useState(null);
+  // Additional Multi-Year API inputs
+  const [numSimulations, setNumSimulations] = useState(25);
+  const [cifMin, setCifMin] = useState(3800);
+  const [cifMax, setCifMax] = useState(4600);
+  const [landedMin, setLandedMin] = useState(4200);
+  const [landedMax, setLandedMax] = useState(5400);
+  const [retailMin, setRetailMin] = useState(5200);
+  const [retailMax, setRetailMax] = useState(6800);
+  const [totalDutyPct, setTotalDutyPct] = useState(duty + cess);
+
+  const [forexInrToMyr, setForexInrToMyr] = useState(0.055);
+  const [forexPattern, setForexPattern] = useState("increasing");
+  const [forexRate, setForexRate] = useState(0.03);
+  const [forexVolatility, setForexVolatility] = useState(0.05);
+
+  const [inflationPattern, setInflationPattern] = useState("increasing");
+  const [inflationVolatilityAmplitude, setInflationVolatilityAmplitude] = useState(0.05);
+
+  const [supplyChainBaseMin, setSupplyChainBaseMin] = useState(12);
+  const [supplyChainBaseMax, setSupplyChainBaseMax] = useState(20);
+  const [gstFactorMin, setGstFactorMin] = useState(1.10);
+  const [gstFactorMax, setGstFactorMax] = useState(1.20);
+
+  const [routeIssues, setRouteIssues] = useState(0.04);
+  const [environmentImpact, setEnvironmentImpact] = useState(0.03);
   
   // Manual Input State
   const [spotPrice, setSpotPrice] = useState("");
@@ -105,23 +130,31 @@ export default function ScenarioBuilder() {
     setLoading(true);
     setError(null);
     try {
+      // Use the updated request body structure
       const requestBody = {
-        month_name: seasonalMonth,
         start_year: startYear,
         years: simulationYears,
-        bcd: duty,
-        cess: cess,
-        inflation_rate: inflationRate / 100, // Convert percentage to decimal
-        supply_chain_base: supplyChainCost,
-        supply_chain_inflation_rate: supplyChainInflationRate / 100,
-        safe_landed_threshold: safeLandedThreshold,
-        retail_price_threshold: retailPriceThreshold
+        num_simulations: Number(numSimulations) || 25,
+        cif_range: [Number(cifMin) || 3800, Number(cifMax) || 4600],
+        landed_price_range: [Number(landedMin) || 4200, Number(landedMax) || 5400],
+        retail_price_range: [Number(retailMin) || 5200, Number(retailMax) || 6800],
+        total_duty_pct: Number(totalDutyPct) || (duty + cess),
+        safe_landed_price: Number(safeLandedThreshold),
+        safe_retail_price: Number(retailPriceThreshold),
+        forex_inr_to_myr: Number(forexInrToMyr),
+        forex_pattern: forexPattern,
+        forex_rate: Number(forexRate),
+        forex_volatility_amplitude: Number(forexVolatility),
+        inflation_pattern: inflationPattern,
+        inflation_rate: Number(inflationRate) / 100,
+        inflation_volatility_amplitude: Number(inflationVolatilityAmplitude),
+        supply_chain_base_range: [Number(supplyChainBaseMin) || 12, Number(supplyChainBaseMax) || 20],
+        gst_factor_range: [Number(gstFactorMin) || 1.1, Number(gstFactorMax) || 1.2],
+        route_issues: Number(routeIssues) || 0.04,
+        environment_impact: Number(environmentImpact) || 0.03
       };
       
-      // Add spot_price if in manual mode
-      if (activeMode === "manual" && spotPrice) {
-        requestBody.spot_price = parseFloat(spotPrice);
-      }
+      console.log("Sending multi-year request:", requestBody);
       
       const response = await fetch("http://localhost:5000/tariff-simulation-inflation-costpush", {
         method: "POST",
@@ -388,42 +421,44 @@ export default function ScenarioBuilder() {
 
     // Add multi-year results section if available
     if (multiYearResults) {
+      const { simulation_paths, years_list, yearly_summary, inputs_echo } = multiYearResults;
+      
       html += `
-        <div class="section-title">Multi-Year Projections</div>
+        <div class="section-title">Multi-Year Monte Carlo Simulation Results</div>
         <table>
           <tr>
             <th>Year</th>
-            <th>CIF Price</th>
-            <th>Landed Cost</th>
-            <th>Retail Price</th>
-            <th>Farmer Risk</th>
-            <th>Consumer Risk</th>
+            <th>Avg CIF Price</th>
+            <th>Avg Landed Cost</th>
+            <th>Avg Retail Price</th>
+            <th>Farmer Risk Rate</th>
+            <th>Consumer Risk Rate</th>
           </tr>`;
       
-      multiYearResults.projections?.forEach(proj => {
+      yearly_summary?.forEach((summary, idx) => {
         html += `
           <tr>
-            <td>${proj.year}</td>
-            <td>₹${proj.scenario_cif_price_used?.toFixed(2) || '-'}</td>
-            <td>₹${proj.landed_cost?.toFixed(2) || '-'}</td>
-            <td>₹${proj.estimated_retail_price?.toFixed(2) || '-'}</td>
-            <td>${proj.farmer_at_risk ? '⚠️ At Risk' : '✅ Safe'}</td>
-            <td>${proj.consumer_at_risk ? '⚠️ At Risk' : '✅ Safe'}</td>
+            <td>${years_list[idx]}</td>
+            <td>₹${summary.cif_stats?.avg.toFixed(0) || '-'}</td>
+            <td>₹${summary.landed_stats?.avg.toFixed(0) || '-'}</td>
+            <td>₹${summary.retail_stats?.avg.toFixed(0) || '-'}</td>
+            <td>${(summary.farmer_risk_rate * 100).toFixed(1)}%</td>
+            <td>${(summary.consumer_risk_rate * 100).toFixed(1)}%</td>
           </tr>`;
       });
       
       html += `</table>`;
       
-      // Add summary
-      if (multiYearResults.summary) {
-        html += `
-          <div class="section-title">Multi-Year Summary</div>
+      // Add simulation parameters
+      html += `
+          <div class="section-title">Simulation Parameters</div>
           <table>
-            <tr><td>Sustainability Period</td><td>${multiYearResults.summary.sustainability_years} years</td></tr>
-            <tr><td>Overall Risk Status</td><td>${multiYearResults.summary.overall_risk_label}</td></tr>
-            <tr><td>First Risk Year</td><td>${multiYearResults.summary.first_risk_year || 'None'}</td></tr>
+            <tr><td>CIF Range</td><td>₹${inputs_echo?.cif_range?.min || 0} - ₹${inputs_echo?.cif_range?.max || 0}</td></tr>
+            <tr><td>Forex Pattern</td><td>${inputs_echo?.forex_pattern || ''}</td></tr>
+            <tr><td>Total Duty</td><td>${inputs_echo?.total_duty_pct || 0}%</td></tr>
+            <tr><td>Safe Landed Price</td><td>₹${inputs_echo?.safe_landed_price || 0}</td></tr>
+            <tr><td>Safe Retail Price</td><td>₹${inputs_echo?.safe_retail_price || 0}</td></tr>
           </table>`;
-      }
     }
 
     html += `
@@ -701,138 +736,560 @@ export default function ScenarioBuilder() {
     }
     fetchSimulation(true, spotPrice);
   };
+  
 
-  // Multi-Year Results Display Component
-  const MultiYearResultsDisplay = () => {
-    if (!multiYearResults) return null;
+  // --- Simulation Visualization Component ---
+  const SimulationVisualization = ({ simulationData }) => {
+    const [currentYearIndex, setCurrentYearIndex] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [speed, setSpeed] = useState(1000);
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'chart'
     
-    const { summary, projections } = multiYearResults;
+    const { simulation_paths, years_list, yearly_summary } = simulationData || {};
     
+    useEffect(() => {
+      let interval;
+      if (isPlaying && simulation_paths) {
+        interval = setInterval(() => {
+          setCurrentYearIndex(prev => {
+            if (prev >= years_list.length - 1) {
+              setIsPlaying(false);
+              return 0;
+            }
+            return prev + 1;
+          });
+        }, speed);
+      }
+      return () => clearInterval(interval);
+    }, [isPlaying, speed, simulation_paths, years_list]);
+    
+    if (!simulation_paths || !yearly_summary) return null;
+    
+    const currentYear = years_list[currentYearIndex];
+    const currentYearData = yearly_summary[currentYearIndex];
+    const currentSimulations = simulation_paths.map(path => path[currentYearIndex]);
+    // Define ranges once so they can be used for all simulations and target lines
+    const landedRange = [4200, 6800]; // From your data or user-configured ranges
+    const retailRange = [5000, 7000]; // From your data or user-configured ranges
+    
+    const getRiskColor = (riskParty) => {
+      switch(riskParty) {
+        case 'farmer': return '#f97316'; // Orange
+        case 'consumer': return '#ef4444'; // Red
+        case 'both': return '#dc2626'; // Dark red
+        default: return '#10b981'; // Green
+      }
+    };
+
     return (
-      <div className="mt-5 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white p-4">
+      <div className="mt-6 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="font-bold">Multi-Year Simulation Results</h4>
-              <p className="text-sm opacity-90">
-                {simulationYears}-Year Projection ({startYear}-{startYear + simulationYears - 1})
-              </p>
+              <h4 className="font-bold text-lg">Monte Carlo Simulation Visualization</h4>
+              <p className="text-sm opacity-90">Real-time risk propagation across {simulation_paths.length} simulation paths</p>
             </div>
-            <div className="text-xs px-2 py-1 bg-white/20 rounded">
-              INFLATION-ADJUSTED
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-colors flex items-center gap-2"
+                >
+                  {isPlaying ? <span>⏸️ Pause</span> : <span>▶️ Play</span>}
+                </button>
+                <button
+                  onClick={() => setCurrentYearIndex(0)}
+                  className="px-3 py-1 bg-white/20 rounded hover:bg-white/30 transition-colors"
+                >
+                  ↺ Reset
+                </button>
+                <div className="flex gap-2 ml-2">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`px-2 py-1 rounded text-xs ${viewMode === 'grid' ? 'bg-white text-purple-700' : 'bg-white/10'}`}
+                  >
+                    Grid View
+                  </button>
+                  <button
+                    onClick={() => setViewMode('chart')}
+                    className={`px-2 py-1 rounded text-xs ${viewMode === 'chart' ? 'bg-white text-purple-700' : 'bg-white/10'}`}
+                  >
+                    Chart View
+                  </button>
+                </div>
+              </div>
+              <div className="text-sm bg-white/20 px-3 py-1 rounded">
+                Year: <span className="font-bold">{currentYear}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Controls */}
+          <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Speed:</span>
+              <input
+                type="range"
+                min="200"
+                max="2000"
+                step="100"
+                value={speed}
+                onChange={(e) => setSpeed(parseInt(e.target.value))}
+                className="w-32"
+              />
+              <span className="text-xs">{(2000 - speed) / 1000 + 1}x</span>
+            </div>
+            
+            {/* Timeline */}
+            <div className="flex-1 mx-4">
+              <div className="flex justify-between text-xs mb-1">
+                {years_list.map((year, idx) => (
+                  <button
+                    key={year}
+                    onClick={() => setCurrentYearIndex(idx)}
+                    className={`px-1 ${idx === currentYearIndex ? "font-bold text-white" : "text-white/70"}`}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+              <div className="h-2 bg-white/20 rounded-full relative">
+                <div 
+                  className="h-full bg-white rounded-full absolute top-0 left-0 transition-all duration-300"
+                  style={{ width: `${(currentYearIndex / (years_list.length - 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+            
+            <div className="text-xs text-white/70">
+              {currentSimulations.length} active simulations
             </div>
           </div>
         </div>
         
         <div className="p-6">
-          {/* Summary Section */}
-          {summary && (
-            <div className={`mb-6 p-4 rounded-lg border ${
-              summary.risk_before_horizon ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
-            }`}>
-              <div className="font-semibold mb-2">
-                {summary.overall_risk_label}
-              </div>
-              <div className="text-sm space-y-2">
-                <div>
-                  <strong>Sustainability:</strong> {summary.sustainability_years} years
-                  {summary.sustain_until_year && ` (until ${summary.sustain_until_year})`}
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left: Simulation Grid */}
+              <div className="lg:col-span-2">
+                <div className="relative bg-gradient-to-b from-gray-50 to-white border border-gray-300 rounded-lg p-4 h-[500px]">
+                  {/* Grid background */}
+                  <div className="absolute inset-0">
+                    {/* Horizontal lines */}
+                    {[0, 20, 40, 60, 80, 100].map(pos => (
+                      <div key={`h-${pos}`} className="absolute left-0 right-0 h-px bg-gray-200" style={{ top: `${pos}%` }} />
+                    ))}
+                    {/* Vertical lines */}
+                    {[0, 20, 40, 60, 80, 100].map(pos => (
+                      <div key={`v-${pos}`} className="absolute top-0 bottom-0 w-px bg-gray-200" style={{ left: `${pos}%` }} />
+                    ))}
+                  </div>
+                  
+                  {/* Axis labels */}
+                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-sm font-medium text-gray-600 text-nowrap">
+                    Landed Cost (₹) → Farmer Risk Indicator
+                  </div>
+                  <div className="absolute top-1/2 -left-12 transform -translate-y-1/2 -rotate-90 text-sm font-medium text-gray-600">
+                    Retail Price (₹) → Consumer Risk Indicator
+                  </div>
+                  
+                  {/* Safe zones */}
+                  <div className="absolute bg-green-50 border-2 border-green-200 rounded" 
+                    style={{ 
+                      left: '20%', top: '20%', 
+                      width: '40%', height: '40%' 
+                    }}>
+                    <div className="text-xs text-green-600 p-2">Safe Zone (No Risk)</div>
+                  </div>
+                  
+                  {/* Risk zones */}
+                  <div className="absolute bg-orange-50 border-2 border-orange-200 rounded" 
+                    style={{ 
+                      left: '10%', top: '10%', 
+                      width: '10%', height: '80%' 
+                    }}>
+                    <div className="text-xs text-orange-600 p-2 rotate-90">Farmer Risk Zone</div>
+                  </div>
+                  
+                  <div className="absolute bg-red-50 border-2 border-red-200 rounded" 
+                    style={{ 
+                      left: '70%', top: '10%', 
+                      width: '20%', height: '80%' 
+                    }}>
+                    <div className="text-xs text-red-600 p-2 rotate-90">Consumer Risk Zone</div>
+                  </div>
+                  
+                  {/* Simulation dots with tooltips */}
+                  {currentSimulations.map((sim, idx) => {
+                    // Normalize positions based on realistic ranges
+                    const xPos = ((sim.landed_cost - landedRange[0]) / (landedRange[1] - landedRange[0])) * 80 + 10;
+                    const yPos = ((sim.retail_price - retailRange[0]) / (retailRange[1] - retailRange[0])) * 80 + 10;
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute rounded-full shadow-lg transition-all duration-500 cursor-pointer group"
+                        style={{
+                          left: `${Math.min(Math.max(xPos, 5), 95)}%`,
+                          top: `${Math.min(Math.max(yPos, 5), 95)}%`,
+                          width: '16px',
+                          height: '16px',
+                          backgroundColor: getRiskColor(sim.risk_party),
+                          border: '2px solid white',
+                          transform: `translate(-50%, -50%)`,
+                          opacity: 0.9,
+                          animation: `pulse 2s infinite ${idx * 0.1}s`,
+                          zIndex: sim.risk_party === 'both' ? 30 : sim.risk_party === 'consumer' ? 20 : 10
+                        }}
+                      >
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-48 bg-gray-900 text-white text-xs rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl">
+                          <div className="font-semibold mb-1">Simulation {sim.simulation_id + 1}</div>
+                          <div className="grid grid-cols-2 gap-1">
+                            <div>Landed:</div>
+                            <div className="text-right font-medium">₹{sim.landed_cost.toFixed(0)}</div>
+                            <div>Retail:</div>
+                            <div className="text-right font-medium">₹{sim.retail_price.toFixed(0)}</div>
+                            <div>CIF:</div>
+                            <div className="text-right">₹{sim.scenario_cif_used.toFixed(0)}</div>
+                            <div>FX Rate:</div>
+                            <div className="text-right">{sim.fx_inr_to_myr_used.toFixed(4)}</div>
+                            <div>Risk:</div>
+                            <div className={`text-right font-semibold ${
+                              sim.risk_party === 'farmer' ? 'text-orange-400' :
+                              sim.risk_party === 'consumer' ? 'text-red-400' :
+                              'text-green-400'
+                            }`}>
+                              {sim.risk_party.replace('_', ' ').toUpperCase()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Target lines */}
+                  <div className="absolute left-0 right-0 h-px bg-green-500 border-dashed" 
+                    style={{ top: `${((6000 - retailRange[0]) / (retailRange[1] - retailRange[0])) * 80 + 10}%` }}>
+                    <div className="absolute right-0 -top-6 text-xs text-green-600">Retail Target: ₹6000</div>
+                  </div>
+                  
+                  <div className="absolute top-0 bottom-0 w-px bg-orange-500 border-dashed" 
+                    style={{ left: `${((4800 - landedRange[0]) / (landedRange[1] - landedRange[0])) * 80 + 10}%` }}>
+                    <div className="absolute -left-2 -bottom-8 text-xs text-orange-600 rotate-90">Landed Target: ₹4800</div>
+                  </div>
                 </div>
-                {summary.first_risk_year && (
-                  <div>
-                    <strong>First Risk Year:</strong> {summary.first_risk_year} ({summary.first_risk_who})
+                
+                {/* Legend */}
+                <div className="mt-8 flex flex-wrap gap-4 justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-green-500"></div>
+                    <span className="text-sm">No Risk (Safe)</span>
                   </div>
-                )}
-                {summary.thresholds_breached && summary.thresholds_breached.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+                    <span className="text-sm">Farmer at Risk</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                    <span className="text-sm">Consumer at Risk</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full border-2 border-red-600 bg-red-300"></div>
+                    <span className="text-sm">Both at Risk</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Right: Stats Panel */}
+              <div className="bg-gradient-to-b from-blue-50 to-white border border-blue-100 rounded-lg p-4">
+                <h5 className="font-bold text-blue-800 mb-4">Year {currentYear} Statistics</h5>
+                
+                <div className="space-y-6">
+                  {/* Risk Distribution */}
                   <div>
-                    <strong>Breached Thresholds:</strong>
-                    <ul className="mt-1 ml-4 list-disc">
-                      {summary.thresholds_breached.map((threshold, idx) => (
-                        <li key={idx}>{threshold.type}: {threshold.rule} (Threshold: ₹{threshold.threshold_value})</li>
+                    <div className="text-sm font-medium text-gray-700 mb-3">Risk Distribution</div>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-orange-600">Farmer Risk:</span>
+                          <span className="font-bold">
+                            {(currentYearData.farmer_risk_rate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-orange-500 h-2.5 rounded-full transition-all duration-500"
+                            style={{ width: `${currentYearData.farmer_risk_rate * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-red-600">Consumer Risk:</span>
+                          <span className="font-bold">
+                            {(currentYearData.consumer_risk_rate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-red-500 h-2.5 rounded-full transition-all duration-500"
+                            style={{ width: `${currentYearData.consumer_risk_rate * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-green-600">No Risk:</span>
+                          <span className="font-bold">
+                            {((1 - currentYearData.farmer_risk_rate - currentYearData.consumer_risk_rate) * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-green-500 h-2.5 rounded-full transition-all duration-500"
+                            style={{ width: `${(1 - currentYearData.farmer_risk_rate - currentYearData.consumer_risk_rate) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Price Statistics */}
+                  <div className="border-t pt-4">
+                    <div className="text-sm font-medium text-gray-700 mb-3">Price Statistics (₹)</div>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">CIF Price</div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">₹{currentYearData.cif_stats.min.toFixed(0)}</span>
+                          <div className="text-center">
+                            <div className="font-bold text-blue-600">₹{currentYearData.cif_stats.avg.toFixed(0)}</div>
+                            <div className="text-xs text-gray-500">average</div>
+                          </div>
+                          <span className="text-sm">₹{currentYearData.cif_stats.max.toFixed(0)}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Landed Cost</div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">₹{currentYearData.landed_stats.min.toFixed(0)}</span>
+                          <div className="text-center">
+                            <div className={`font-bold ${currentYearData.landed_stats.avg < 4800 ? 'text-orange-600' : 'text-green-600'}`}>
+                              ₹{currentYearData.landed_stats.avg.toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500">average</div>
+                          </div>
+                          <span className="text-sm">₹{currentYearData.landed_stats.max.toFixed(0)}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Retail Price</div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">₹{currentYearData.retail_stats.min.toFixed(0)}</span>
+                          <div className="text-center">
+                            <div className={`font-bold ${currentYearData.retail_stats.avg > 6000 ? 'text-red-600' : 'text-green-600'}`}>
+                              ₹{currentYearData.retail_stats.avg.toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500">average</div>
+                          </div>
+                          <span className="text-sm">₹{currentYearData.retail_stats.max.toFixed(0)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Top Risk Scenarios */}
+                  <div className="border-t pt-4">
+                    <div className="text-sm font-medium text-gray-700 mb-2">Top Risk Scenarios</div>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {currentSimulations
+                        .filter(s => s.risk_party !== 'no_one')
+                        .slice(0, 3)
+                        .map((sim, idx) => (
+                          <div key={idx} className="text-xs p-2 bg-white border border-gray-200 rounded">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-medium">Path {sim.simulation_id + 1}</span>
+                              <span className={`px-2 py-0.5 rounded ${
+                                sim.risk_party === 'farmer' ? 'bg-orange-100 text-orange-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {sim.risk_party}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 text-gray-600">
+                              <div>CIF: ₹{sim.scenario_cif_used.toFixed(0)}</div>
+                              <div>FX: {sim.fx_inr_to_myr_used.toFixed(4)}</div>
+                            </div>
+                          </div>
                       ))}
-                    </ul>
+                      {currentSimulations.filter(s => s.risk_party !== 'no_one').length === 0 && (
+                        <div className="text-center text-gray-500 text-xs py-4">
+                          No active risk scenarios in {currentYear}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
-          )}
-          
-          {/* Projections Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CIF Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Landed Cost</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Retail Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Farmer Risk</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Consumer Risk</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {projections?.map((projection, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{projection.year}</div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">₹{projection.scenario_cif_price_used?.toFixed(2) || '0.00'}</div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className={`font-medium ${
-                        projection.farmer_at_risk ? "text-red-600" : "text-green-600"
-                      }`}>
-                        ₹{projection.landed_cost?.toFixed(2) || '0.00'}
+          ) : (
+            // Chart View
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Price Trends Chart */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="font-medium text-gray-800 mb-4">Price Trends Over Time</div>
+                  <div className="h-64">
+                    {/* Simplified price chart visualization */}
+                    <div className="relative h-full">
+                      {/* Y-axis labels */}
+                      <div className="absolute left-0 top-0 bottom-0 w-12">
+                        {[5000, 5500, 6000, 6500, 7000].map((price, idx) => (
+                          <div key={price} className="absolute text-xs text-gray-500" 
+                            style={{ bottom: `${(price - 5000) / 2000 * 100}%` }}>
+                            ₹{price}
+                          </div>
+                        ))}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className={`font-medium ${
-                        projection.consumer_at_risk ? "text-red-600" : "text-green-600"
-                      }`}>
-                        ₹{projection.estimated_retail_price?.toFixed(2) || '0.00'}
+                      
+                      {/* Chart area */}
+                      <div className="absolute left-12 right-0 top-0 bottom-0 border-l border-b border-gray-300">
+                        {/* Retail price line */}
+                        <div className="absolute left-0 right-0 h-px bg-green-500 border-dashed" 
+                          style={{ bottom: `${(6000 - 5000) / 2000 * 100}%` }}>
+                          <div className="absolute right-0 -top-6 text-xs text-green-600">Target Retail</div>
+                        </div>
+                        
+                        {/* Price lines for each simulation */}
+                        {simulation_paths.slice(0, 5).map((path, idx) => {
+                          const denom = Math.max(years_list.length - 1, 1);
+                          const points = path.map((yearData, yearIdx) => {
+                            const xRaw = (yearIdx / denom) * 100;
+                            const yRaw = ((yearData.retail_price || 0) - 5000) / 2000 * 100;
+                            const x = Math.min(Math.max(xRaw, 0), 100);
+                            const y = Math.min(Math.max(yRaw, 0), 100);
+                            return { x, y };
+                          });
+                          
+                          return (
+                            <div key={idx} className="absolute inset-0">
+                              {/* Line */}
+                              <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full" style={{ opacity: 0.3 }}>
+                                <polyline
+                                  fill="none"
+                                  stroke="#3b82f6"
+                                  strokeWidth="1"
+                                  points={points.map(p => `${p.x},${100 - p.y}`).join(' ')}
+                                />
+                              </svg>
+                              
+                              {/* Points */}
+                              {points.map((point, pointIdx) => (
+                                <div
+                                  key={pointIdx}
+                                  className="absolute w-2 h-2 rounded-full bg-blue-500 transform -translate-x-1 -translate-y-1"
+                                  style={{
+                                    left: `${point.x}%`,
+                                    top: `${100 - point.y}%`
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          );
+                        })}
+                        
+                        {/* Year labels */}
+                        <div className="absolute -bottom-8 left-0 right-0 flex justify-between">
+                          {years_list.map((year, idx) => (
+                            <div key={year} className="text-xs text-gray-500">
+                              {year}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        projection.farmer_at_risk 
-                          ? "bg-red-100 text-red-800" 
-                          : "bg-green-100 text-green-800"
-                      }`}>
-                        {projection.farmer_at_risk ? "At Risk" : "Safe"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        projection.consumer_at_risk 
-                          ? "bg-red-100 text-red-800" 
-                          : "bg-green-100 text-green-800"
-                      }`}>
-                        {projection.consumer_at_risk ? "At Risk" : "Safe"}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Duty Recommendations */}
-          {summary?.duty_change_events && summary.duty_change_events.length > 0 && (
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="font-semibold text-yellow-800 mb-2">Duty Change Recommendations</div>
-              <div className="text-sm space-y-3">
-                {summary.duty_change_events.map((event, idx) => (
-                  <div key={idx} className="p-3 bg-white border border-yellow-300 rounded">
-                    <div className="font-medium">Year {event.year}: {event.reason?.replace(/_/g, ' ')}</div>
-                    {event.recommendation && (
-                      <div className="mt-1 text-xs">
-                        <div>Suggested BCD: {event.recommendation.suggested_bcd?.toFixed(1)}%</div>
-                        <div>Suggested Cess: {event.recommendation.suggested_cess?.toFixed(1)}%</div>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                ))}
+                  <div className="text-xs text-gray-500 mt-2 text-center">
+                    Retail price trends for top 5 simulation paths
+                  </div>
+                </div>
+                
+                {/* Risk Evolution Chart */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="font-medium text-gray-800 mb-4">Risk Evolution Over Years</div>
+                  <div className="h-64">
+                    <div className="relative h-full">
+                      {/* Stacked bar chart for risk */}
+                      <div className="absolute left-12 right-0 top-0 bottom-8 flex items-end space-x-1">
+                        {yearly_summary.map((yearData, idx) => {
+                          const barHeight = 100;
+                          const farmerHeight = yearData.farmer_risk_rate * barHeight;
+                          const consumerHeight = yearData.consumer_risk_rate * barHeight;
+                          const safeHeight = (1 - yearData.farmer_risk_rate - yearData.consumer_risk_rate) * barHeight;
+                          
+                          return (
+                            <div key={idx} className="flex-1 flex flex-col items-center">
+                              <div className="w-full h-48 relative">
+                                {/* Safe segment */}
+                                <div 
+                                  className="absolute left-0 right-0 bg-green-500 rounded-t"
+                                  style={{ 
+                                    height: `${safeHeight}%`,
+                                    bottom: 0 
+                                  }}
+                                ></div>
+                                
+                                {/* Farmer risk segment */}
+                                <div 
+                                  className="absolute left-0 right-0 bg-orange-500"
+                                  style={{ 
+                                    height: `${farmerHeight}%`,
+                                    bottom: `${safeHeight}%` 
+                                  }}
+                                ></div>
+                                
+                                {/* Consumer risk segment */}
+                                <div 
+                                  className="absolute left-0 right-0 bg-red-500 rounded-b"
+                                  style={{ 
+                                    height: `${consumerHeight}%`,
+                                    bottom: `${safeHeight + farmerHeight}%` 
+                                  }}
+                                ></div>
+                              </div>
+                              <div className="mt-2 text-xs font-medium">{years_list[idx]}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Y-axis labels */}
+                      <div className="absolute left-0 top-0 bottom-8 w-12">
+                        {[0, 25, 50, 75, 100].map((percent, idx) => (
+                          <div key={percent} className="absolute text-xs text-gray-500" 
+                            style={{ bottom: `${percent}%` }}>
+                            {percent}%
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-center space-x-6 mt-6 text-sm">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded mr-1"></div>
+                      <span>No Risk</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-orange-500 rounded mr-1"></div>
+                      <span>Farmer Risk</span>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-500 rounded mr-1"></div>
+                      <span>Consumer Risk</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -841,8 +1298,323 @@ export default function ScenarioBuilder() {
     );
   };
 
+  // --- Multi-Year Results Display Component ---
+  const MultiYearResultsDisplay = () => {
+    if (!multiYearResults) return null;
+    
+    const { simulation_paths, yearly_summary, years_list, inputs_echo } = multiYearResults;
+    
+    // Calculate overall statistics
+    const allYearsData = simulation_paths.flat();
+    const overallStats = {
+      farmerRiskRate: (allYearsData.filter(d => d.farmer_risk).length / allYearsData.length * 100).toFixed(1),
+      consumerRiskRate: (allYearsData.filter(d => d.consumer_risk).length / allYearsData.length * 100).toFixed(1),
+      avgLanded: (allYearsData.reduce((sum, d) => sum + d.landed_cost, 0) / allYearsData.length).toFixed(0),
+      avgRetail: (allYearsData.reduce((sum, d) => sum + d.retail_price, 0) / allYearsData.length).toFixed(0)
+    };
+
+    return (
+      <div className="mt-5 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-bold text-lg">Multi-Year Monte Carlo Simulation Results</h4>
+              <p className="text-sm opacity-90">
+                {years_list.length}-Year Projection ({years_list[0]}-{years_list[years_list.length - 1]})
+              </p>
+            </div>
+            <div className="text-xs px-2 py-1 bg-white/20 rounded">
+              {simulation_paths.length} SIMULATION PATHS
+            </div>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          {/* Quick Stats Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="text-sm text-blue-600 mb-1">Total Simulations</div>
+              <div className="text-2xl font-bold text-blue-700">{allYearsData.length}</div>
+              <div className="text-xs text-blue-500">Data points</div>
+            </div>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="text-sm text-orange-600 mb-1">Farmer Risk Rate</div>
+              <div className="text-2xl font-bold text-orange-700">{overallStats.farmerRiskRate}%</div>
+              <div className="text-xs text-orange-500">Overall average</div>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="text-sm text-red-600 mb-1">Consumer Risk Rate</div>
+              <div className="text-2xl font-bold text-red-700">{overallStats.consumerRiskRate}%</div>
+              <div className="text-xs text-red-500">Overall average</div>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="text-sm text-green-600 mb-1">Avg Retail Price</div>
+              <div className="text-2xl font-bold text-green-700">₹{overallStats.avgRetail}</div>
+              <div className="text-xs text-green-500">Across all years</div>
+            </div>
+          </div>
+
+          {/* Input Parameters Summary */}
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="font-semibold text-gray-800 mb-3">Simulation Input Parameters</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div>
+                <span className="text-gray-600">CIF Range:</span>
+                <span className="font-semibold ml-2">₹{inputs_echo?.cif_range?.min || 0} - ₹{inputs_echo?.cif_range?.max || 0}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Forex Pattern:</span>
+                <span className="font-semibold ml-2 capitalize">{inputs_echo?.forex_pattern || ''}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Total Duty:</span>
+                <span className="font-semibold ml-2">{inputs_echo?.total_duty_pct || 0}%</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Safe Landed:</span>
+                <span className="font-semibold ml-2">₹{inputs_echo?.safe_landed_price || 0}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Safe Retail:</span>
+                <span className="font-semibold ml-2">₹{inputs_echo?.safe_retail_price || 0}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Environment Impact:</span>
+                <span className="font-semibold ml-2">{(inputs_echo?.environment_impact * 100 || 0).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Yearly Summary Table */}
+          <div className="mb-6">
+            <div className="font-semibold text-gray-800 mb-4 flex items-center justify-between">
+              <div>Yearly Summary Statistics</div>
+              <div className="text-sm text-gray-500">Risk rates represent percentage of simulations at risk</div>
+            </div>
+            <div className="overflow-x-auto border border-gray-200 rounded-lg">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg CIF Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Landed Cost</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Retail Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Farmer Risk</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Consumer Risk</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Forex Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {yearly_summary?.map((summary, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">{years_list[idx]}</div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          <div>₹{summary.cif_stats?.avg.toFixed(0)}</div>
+                          <div className="text-xs text-gray-500">
+                            (₹{summary.cif_stats?.min.toFixed(0)}-₹{summary.cif_stats?.max.toFixed(0)})
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className={`font-medium ${summary.landed_stats?.avg < (inputs_echo?.safe_landed_price || 0) ? 'text-red-600' : 'text-green-600'}`}>
+                          ₹{summary.landed_stats?.avg.toFixed(0)}
+                        </div>
+                        <div className="text-xs text-gray-500">Target: ₹{inputs_echo?.safe_landed_price || 0}</div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className={`font-medium ${summary.retail_stats?.avg > (inputs_echo?.safe_retail_price || 0) ? 'text-red-600' : 'text-green-600'}`}>
+                          ₹{summary.retail_stats?.avg.toFixed(0)}
+                        </div>
+                        <div className="text-xs text-gray-500">Target: ₹{inputs_echo?.safe_retail_price || 0}</div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`w-2 h-2 rounded-full mr-2 ${summary.farmer_risk_rate > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                          <span className={`text-sm font-medium ${summary.farmer_risk_rate > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {(summary.farmer_risk_rate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`w-2 h-2 rounded-full mr-2 ${summary.consumer_risk_rate > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                          <span className={`text-sm font-medium ${summary.consumer_risk_rate > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {(summary.consumer_risk_rate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{summary.fx_stats?.avg.toFixed(4)}</div>
+                        <div className="text-xs text-gray-500">INR/MYR</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Simulation Visualization Component */}
+          <SimulationVisualization simulationData={multiYearResults} />
+
+          {/* Detailed Simulation Paths Table (Collapsible) */}
+          <div className="mt-6">
+            <details className="border border-gray-300 rounded-lg">
+              <summary className="p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer font-medium text-gray-800">
+                View Detailed Simulation Paths ({simulation_paths.length} paths × {years_list.length} years)
+              </summary>
+              <div className="p-4 border-t">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {simulation_paths.map((path, pathIndex) => {
+                    const sampleYear = path[path.length - 1] || path[0] || {};
+                    return (
+                    <div key={pathIndex} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="font-medium text-gray-800">Path {pathIndex + 1}</div>
+                        <div className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600">
+                          Base CIF: ₹{path[0]?.base_cif}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {path.slice(0, 3).map((yearData, yearIndex) => (
+                          <div key={yearIndex} className="text-sm p-2 bg-gray-50 rounded border border-gray-100">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="font-medium">Year {yearData.year}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                yearData.risk_party === 'no_one' ? 'bg-green-100 text-green-800' :
+                                yearData.risk_party === 'farmer' ? 'bg-orange-100 text-orange-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {yearData.risk_party.replace('_', ' ')}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 text-xs">
+                              <div>Landed: <span className="font-medium">₹{yearData.landed_cost.toFixed(0)}</span></div>
+                              <div>Retail: <span className="font-medium">₹{yearData.retail_price.toFixed(0)}</span></div>
+                              <div>FX: <span className="font-medium">{yearData.fx_inr_to_myr_used.toFixed(4)}</span></div>
+                              <div>Inflation: <span className="font-medium">{yearData.gst_used}</span></div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {path.length > 3 && (
+                          <div className="text-center text-xs text-gray-500 py-2 border-t">
+                            + {path.length - 3} more years
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="mt-3 pt-3 border-t text-xs text-gray-600">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="block text-gray-500">Env Impact:</span>
+                            <span className="font-medium">{((sampleYear.environment_impact || 0) * 100).toFixed(1)}%</span>
+                          </div>
+                          <div>
+                            <span className="block text-gray-500">Route Issues:</span>
+                            <span className="font-medium">{((sampleYear.route_issues || 0) * 100).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </details>
+          </div>
+
+          {/* Risk Analysis Summary */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+            <div className="font-semibold text-blue-800 mb-3">Risk Analysis Summary</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Risk Distribution Over Years</div>
+                <div className="space-y-2">
+                  {yearly_summary?.map((summary, idx) => (
+                    <div key={idx} className="flex items-center">
+                      <div className="w-16 text-sm text-gray-600">{years_list[idx]}</div>
+                      <div className="flex-1 flex space-x-1">
+                        <div 
+                          className="h-6 bg-orange-500 rounded-l" 
+                          style={{ width: `${summary.farmer_risk_rate * 100}%` }}
+                          title={`Farmer Risk: ${(summary.farmer_risk_rate * 100).toFixed(1)}%`}
+                        ></div>
+                        <div 
+                          className="h-6 bg-red-500 rounded-r" 
+                          style={{ width: `${summary.consumer_risk_rate * 100}%` }}
+                          title={`Consumer Risk: ${(summary.consumer_risk_rate * 100).toFixed(1)}%`}
+                        ></div>
+                        <div 
+                          className="h-6 bg-green-500" 
+                          style={{ width: `${(1 - summary.farmer_risk_rate - summary.consumer_risk_rate) * 100}%` }}
+                          title={`No Risk: ${((1 - summary.farmer_risk_rate - summary.consumer_risk_rate) * 100).toFixed(1)}%`}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm font-medium text-gray-700 mb-2">Key Insights</div>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  {yearly_summary?.some(s => s.farmer_risk_rate > 0.3) && (
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full mt-1.5 mr-2"></div>
+                      <span>Farmer risk peaks in certain years, suggesting need for protective measures</span>
+                    </li>
+                  )}
+                  {yearly_summary?.some(s => s.consumer_risk_rate > 0.3) && (
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 mr-2"></div>
+                      <span>Consumer risk is consistently present, indicating price pressure</span>
+                    </li>
+                  )}
+                  {yearly_summary?.every(s => s.farmer_risk_rate < 0.5 && s.consumer_risk_rate < 0.5) && (
+                    <li className="flex items-start">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 mr-2"></div>
+                      <span>Overall risk distribution is manageable across simulation horizon</span>
+                    </li>
+                  )}
+                  <li className="flex items-start">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5 mr-2"></div>
+                    <span>Forex volatility contributes significantly to price fluctuations</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Add CSS styles
+  const styles = `
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+      50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.3s ease-out;
+    }
+  `;
+
   return (
     <div className="max-w-7xl mx-auto p-4">
+      <style>{styles}</style>
       {/* Page Header - Blue Header */}
       <div className="mb-8 bg-white border-l-4 border-[#003366] shadow-md rounded-r-lg overflow-hidden">
         <div className="p-6">
@@ -923,7 +1695,7 @@ export default function ScenarioBuilder() {
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Enhanced Controls Panel - Plain Header */}
-        <div className="w-full lg:w-80 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="w-full lg:w-96 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="bg-gradient-to-r from-[#0072bc] to-[#00509e] text-white p-4">
             <h3 className="text-lg font-bold">Policy Parameters</h3>
             <p className="text-sm mt-1">Configure simulation scenarios</p>
@@ -1126,7 +1898,7 @@ export default function ScenarioBuilder() {
               </div>
             )}
 
-            <div className="space-y-3 mt-6 pt-4 border-t border-gray-200">
+            <div className="space-y-3 mt-6 pt-4 border-t border-b border-gray-200">
               {activeMode === "ai" ? (
                 <button 
                   onClick={() => fetchSimulation(false, null)}
@@ -1144,107 +1916,352 @@ export default function ScenarioBuilder() {
                   {loading ? "Calculating..." : "Calculate with Manual Price"}
                 </button>
               )}
-              <div className="mb-6 p-4"></div>
               
-              {/* <button className="w-full border border-gray-300 text-gray-700 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                Save Scenario
-              </button> */}
-              
-              {/* <button className="w-full border border-dashed border-gray-300 text-gray-600 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                Compare with Baseline
-              </button> */}
               {/* Multi-Year Controls */}
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="font-semibold text-blue-800 mb-3">Multi-Year Simulation Parameters</div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Year
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full rounded-lg border border-gray-300 p-2"
-                    value={startYear}
-                    onChange={(e) => setStartYear(parseInt(e.target.value))}
-                    min="2023"
-                    max="2030"
-                  />
+              <div className="mt-6 rounded-lg">
+                <div className="font-bold border-gray-400 border-t py-4 text-blue-800 mb-3">Multi-Year Simulation Parameters</div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Start Year
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={startYear}
+                      onChange={(e) => setStartYear(parseInt(e.target.value))}
+                      min="2023"
+                      max="2030"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Simulation Years
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={simulationYears}
+                      onChange={(e) => setSimulationYears(parseInt(e.target.value))}
+                      min="1"
+                      max="10"
+                    />
+                  </div>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Simulation Years
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full rounded-lg border border-gray-300 p-2"
-                    value={simulationYears}
-                    onChange={(e) => setSimulationYears(parseInt(e.target.value))}
-                    min="1"
-                    max="10"
-                  />
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Number of Simulations</label>
+                    <input
+                      type="number"
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={numSimulations}
+                      onChange={(e) => setNumSimulations(parseInt(e.target.value))}
+                      min="1"
+                      max="1000"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Number of Monte-Carlo simulation paths</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Duty % (BCD + Cess)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={totalDutyPct}
+                      onChange={(e) => setTotalDutyPct(parseFloat(e.target.value))}
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Override combined duty percentage</div>
+                  </div>
                 </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">CIF Range Min</label>
+                    <input type="number" className="w-full rounded-lg border border-gray-300 p-2" value={cifMin} onChange={(e)=>setCifMin(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">CIF Range Max</label>
+                    <input type="number" className="w-full rounded-lg border border-gray-300 p-2" value={cifMax} onChange={(e)=>setCifMax(parseFloat(e.target.value))} />
+                  </div>
+                  <div className="text-xs text-gray-500 flex items-end">Price units: ₹/MT</div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Landed Min</label>
+                    <input type="number" className="w-full rounded-lg border border-gray-300 p-2" value={landedMin} onChange={(e)=>setLandedMin(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Landed Max</label>
+                    <input type="number" className="w-full rounded-lg border border-gray-300 p-2" value={landedMax} onChange={(e)=>setLandedMax(parseFloat(e.target.value))} />
+                  </div>
+                  <div className="text-xs text-gray-500 flex items-end">Used for scenario seeding</div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Retail Min</label>
+                    <input type="number" className="w-full rounded-lg border border-gray-300 p-2" value={retailMin} onChange={(e)=>setRetailMin(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Retail Max</label>
+                    <input type="number" className="w-full rounded-lg border border-gray-300 p-2" value={retailMax} onChange={(e)=>setRetailMax(parseFloat(e.target.value))} />
+                  </div>
+                  <div className="text-xs text-gray-500 flex items-end">Retail price seeding</div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Supply Chain Base Min (%)</label>
+                    <input type="number" step="0.1" className="w-full rounded-lg border border-gray-300 p-2" value={supplyChainBaseMin} onChange={(e)=>setSupplyChainBaseMin(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Supply Chain Base Max (%)</label>
+                    <input type="number" step="0.1" className="w-full rounded-lg border border-gray-300 p-2" value={supplyChainBaseMax} onChange={(e)=>setSupplyChainBaseMax(parseFloat(e.target.value))} />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Inflation Factor Min</label>
+                    <input type="number" step="0.01" className="w-full rounded-lg border border-gray-300 p-2" value={gstFactorMin} onChange={(e)=>setGstFactorMin(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Inflation Factor Max</label>
+                    <input type="number" step="0.01" className="w-full rounded-lg border border-gray-300 p-2" value={gstFactorMax} onChange={(e)=>setGstFactorMax(parseFloat(e.target.value))} />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Forex Pattern</label>
+                    <select className="w-full rounded-lg border border-gray-300 p-2" value={forexPattern} onChange={(e)=>setForexPattern(e.target.value)}>
+                      <option value="increasing">Increasing</option>
+                      <option value="decreasing">Decreasing</option>
+                      <option value="volatile">Volatile</option>
+                      <option value="steady">Steady</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Forex INR→MYR</label>
+                    <input type="number" step="0.0001" className="w-full rounded-lg border border-gray-300 p-2" value={forexInrToMyr} onChange={(e)=>setForexInrToMyr(parseFloat(e.target.value))} />
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Forex Drift Rate</label>
+                    <input type="number" step="0.001" className="w-full rounded-lg border border-gray-300 p-2" value={forexRate} onChange={(e)=>setForexRate(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Forex Volatility Amp.</label>
+                    <input type="number" step="0.001" className="w-full rounded-lg border border-gray-300 p-2" value={forexVolatility} onChange={(e)=>setForexVolatility(parseFloat(e.target.value))} />
+                  </div>
+                  <div className="text-xs text-gray-500 flex items-end">Forex settings for stochastic paths</div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Inflation Pattern</label>
+                    <select className="w-full rounded-lg border border-gray-300 p-2" value={inflationPattern} onChange={(e)=>setInflationPattern(e.target.value)}>
+                      <option value="increasing">Increasing</option>
+                      <option value="decreasing">Decreasing</option>
+                      <option value="volatile">Volatile</option>
+                      <option value="steady">Steady</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Inflation Volatility Amp.</label>
+                    <input type="number" step="0.001" className="w-full rounded-lg border border-gray-300 p-2" value={inflationVolatilityAmplitude} onChange={(e)=>setInflationVolatilityAmplitude(parseFloat(e.target.value))} />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Route Issues (probability)</label>
+                    <input type="number" step="0.001" className="w-full rounded-lg border border-gray-300 p-2" value={routeIssues} onChange={(e)=>setRouteIssues(parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Environment Impact (probability)</label>
+                    <input type="number" step="0.001" className="w-full rounded-lg border border-gray-300 p-2" value={environmentImpact} onChange={(e)=>setEnvironmentImpact(parseFloat(e.target.value))} />
+                  </div>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Safe Landed Threshold (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={safeLandedThreshold}
+                      onChange={(e) => setSafeLandedThreshold(parseFloat(e.target.value))}
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Minimum landed cost to protect farmers</div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Retail Price Ceiling (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="w-full rounded-lg border border-gray-300 p-2"
+                      value={retailPriceThreshold}
+                      onChange={(e) => setRetailPriceThreshold(parseFloat(e.target.value))}
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Maximum retail price for consumers</div>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={fetchMultiYearSimulation}
+                  disabled={loading}
+                  className="mt-4 w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Running Multi-Year Simulation..." : "Run Multi-Year Simulation"}
+                </button>
               </div>
               
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <ControlSlider
-                  label="Inflation Rate (%)"
-                  value={inflationRate}
-                  min={0}
-                  max={20}
-                  setValue={setInflationRate}
-                  explanation="Annual inflation rate for CIF prices"
+            {/* Additional Simulation Options - Add this section */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="font-semibold text-gray-800 mb-3">Additional Simulation Options</div>
+              
+              {/* Exchange Rate */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Exchange Rate (₹)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full rounded-lg border border-gray-300 p-2"
+                  value={fx}
+                  onChange={(e) => setFx(parseFloat(e.target.value))}
                 />
-                
-                <ControlSlider
-                  label="Supply Chain Inflation (%)"
-                  value={supplyChainInflationRate}
-                  min={0}
-                  max={20}
-                  setValue={setSupplyChainInflationRate}
-                  explanation="Annual inflation for supply chain costs"
+                <div className="text-xs text-gray-500 mt-1">
+                  Higher rate increases import costs
+                </div>
+              </div>
+              
+              {/* Global Shock Scenario */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Global Price Shock
+                </label>
+                <select
+                  className="w-full rounded-lg border border-gray-300 p-2"
+                  value={globalShock}
+                  onChange={(e) => setGlobalShock(e.target.value)}
+                >
+                  <option value="No Shock">No Shock</option>
+                  <option value="Moderate Increase">Moderate Increase (+15%)</option>
+                  <option value="Severe Increase">Severe Increase (+30%)</option>
+                  <option value="Price Crash">Price Crash (-20%)</option>
+                </select>
+              </div>
+              
+              {/* Weather Risk */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Weather Risk
+                </label>
+                <select
+                  className="w-full rounded-lg border border-gray-300 p-2"
+                  value={weatherRisk}
+                  onChange={(e) => setWeatherRisk(e.target.value)}
+                >
+                  <option value="Normal">Normal</option>
+                  <option value="Drought">Drought (-25% yield)</option>
+                  <option value="Excess Rain">Excess Rain (-15% yield)</option>
+                  <option value="Optimal">Optimal (+10% yield)</option>
+                </select>
+              </div>
+              
+              {/* Cluster Status */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cluster Expansion Status
+                </label>
+                <select
+                  className="w-full rounded-lg border border-gray-300 p-2"
+                  value={clusterStatus}
+                  onChange={(e) => setClusterStatus(e.target.value)}
+                >
+                  <option value="Expanding Well">Expanding Well</option>
+                  <option value="Slowing">Slowing</option>
+                  <option value="Stalled">Stalled</option>
+                  <option value="Accelerating">Accelerating</option>
+                </select>
+              </div>
+              
+              {/* Plantation Age */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Average Plantation Age (Years)
+                </label>
+                <input
+                  type="range"
+                  className="w-full"
+                  min="3"
+                  max="25"
+                  value={plantationAge}
+                  onChange={(e) => setPlantationAge(parseInt(e.target.value))}
                 />
-              </div>
-              
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Safe Landed Threshold (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    className="w-full rounded-lg border border-gray-300 p-2"
-                    value={safeLandedThreshold}
-                    onChange={(e) => setSafeLandedThreshold(parseFloat(e.target.value))}
-                  />
-                  <div className="text-xs text-gray-500 mt-1">Minimum landed cost to protect farmers</div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Young (3 yrs)</span>
+                  <span className="font-semibold">{plantationAge} years</span>
+                  <span>Mature (25 yrs)</span>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Retail Price Ceiling (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    className="w-full rounded-lg border border-gray-300 p-2"
-                    value={retailPriceThreshold}
-                    onChange={(e) => setRetailPriceThreshold(parseFloat(e.target.value))}
-                  />
-                  <div className="text-xs text-gray-500 mt-1">Maximum retail price for consumers</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Current Yield: {currentYield} MT/ha
                 </div>
               </div>
               
-              <button
-                onClick={fetchMultiYearSimulation}
-                disabled={loading}
-                className="mt-4 w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50"
-              >
-                {loading ? "Running Multi-Year Simulation..." : "Run Multi-Year Simulation"}
-              </button>
+              {/* FX Shock Toggle */}
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-gray-700">FX Shock Scenario</span>
+                <button
+                  onClick={() => setFxShock(!fxShock)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    fxShock ? "bg-red-500" : "bg-gray-300"
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      fxShock ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              {/* Selected State */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Analysis State
+                </label>
+                <select
+                  className="w-full rounded-lg border border-gray-300 p-2"
+                  value={selectedState}
+                  onChange={(e) => setSelectedState(e.target.value)}
+                >
+                  {Object.keys(stateWiseData).map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+                <div className="text-xs text-gray-500 mt-1">
+                  Area: {currentStateData.areaCovered} ha | OER: {currentStateData.OER}%
+                </div>
+              </div>
             </div>
+              
             </div>
           </div>
         </div>
